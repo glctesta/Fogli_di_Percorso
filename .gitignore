@@ -1,0 +1,26 @@
+# Secret files (existing)
+encryption_key.key
+email_key.key
+db_config.enc
+email_credentials.enc
+
+# Claude Code local config
+.claude/
+
+# Python (early protection; expanded in Task 1 of Piano 1)
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs / state (created by app at runtime)
+logs/
+state/
+
+# IDE
+.vscode/
+.idea/
