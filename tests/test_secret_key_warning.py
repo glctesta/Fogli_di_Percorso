@@ -41,11 +41,17 @@ def test_warning_emitted_when_secret_key_env_var_missing(monkeypatch, caplog):
     assert "non e' impostata" in caplog.text.lower() or "not set" in caplog.text.lower()
 
 
-def test_no_warning_in_testing_mode(caplog, app):
-    """In TESTING mode il warning e' silenziato (la fixture app usa TestSettings)."""
-    # `app` fixture gia' costruisce l'app con TestSettings(TESTING=True)
-    # caplog non avra' il warning (la fixture e' gia' stata creata prima di caplog.at_level,
-    # quindi non puo' catturarlo, ma la cosa importante e' che NON sia stato emesso al
-    # logger root durante la chiamata a create_app).
-    # Verifichiamo invece che ProdSettings(TESTING=False) WOULD trigger it.
+def test_no_warning_in_testing_mode_when_secret_key_missing(monkeypatch, caplog):
+    """In TESTING mode il warning NON viene emesso anche se FDP_SECRET_KEY manca."""
+    monkeypatch.delenv("FDP_SECRET_KEY", raising=False)
+
+    from config.settings import Settings
+
+    class TestSettingsLocal(Settings):
+        TESTING = True
+        SECRET_KEY = "test-secret"
+
+    with caplog.at_level("WARNING"):
+        create_app(settings=TestSettingsLocal, db=MagicMock(spec=Database))
+
     assert "FDP_SECRET_KEY" not in caplog.text
