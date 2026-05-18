@@ -8,14 +8,6 @@ import pytest
 from fdp_app.repos.employee_repo import EmployeeAuthRow
 
 
-@pytest.fixture(autouse=True)
-def reset_rate_limiter():
-    import fdp_app.auth.routes as routes
-    routes._rate_limiter = None
-    yield
-    routes._rate_limiter = None
-
-
 @pytest.fixture
 def mock_repo():
     with patch("fdp_app.auth.routes.EmployeeRepo") as repo_cls:

@@ -39,3 +39,12 @@ def app(mock_db):
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Reset del singleton rate_limiter tra ogni test per evitare inquinamento."""
+    import fdp_app.auth.routes as auth_routes
+    auth_routes._rate_limiter = None
+    yield
+    auth_routes._rate_limiter = None
