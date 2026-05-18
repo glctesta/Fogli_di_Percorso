@@ -1,6 +1,7 @@
 """Logica di autenticazione applicativa."""
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from typing import Optional
 
@@ -31,7 +32,7 @@ class AuthService:
         if row is None:
             return None
 
-        if row.password != password:
+        if not secrets.compare_digest(row.password, password):
             return None
 
         if row.function_code <= self._min_fc:
