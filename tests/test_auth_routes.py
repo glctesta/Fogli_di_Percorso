@@ -91,11 +91,18 @@ def test_post_login_rejects_unknown_user(client, mock_repo):
     assert b"credenziali" in response.data.lower()
 
 
-def test_logout_clears_session_and_redirects(client):
+def test_logout_via_get_is_405_method_not_allowed(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 99
+    response = client.get("/logout")
+    assert response.status_code == 405
+
+
+def test_logout_via_post_clears_session_and_redirects(client):
     with client.session_transaction() as sess:
         sess["user_id"] = 99
         sess["full_name"] = "Test User"
-    response = client.get("/logout", follow_redirects=False)
+    response = client.post("/logout", follow_redirects=False)
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
     with client.session_transaction() as sess:

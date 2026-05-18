@@ -63,7 +63,7 @@ def login():
     return redirect(url_for("dashboard.index"))
 
 
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 def logout():
     user_id = session.get("user_id")
     session.clear()

@@ -15,7 +15,10 @@
             {% if session.get('user_id') %}
             <div class="d-flex">
                 <span class="navbar-text text-light me-3">{{ session.get('full_name') }}</span>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Esci</a>
+                <form action="{{ url_for('auth.logout') }}" method="post" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-light btn-sm">Esci</button>
+                </form>
             </div>
             {% endif %}
         </div>
