@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
@@ -25,11 +26,24 @@ def create_app(*, settings: type[Settings] | None = None,
 
     csrf.init_app(app)
 
+    _warn_if_missing_secret_key(app)
     _configure_logging(app)
     _register_error_handlers(app)
     _register_blueprints(app)
 
     return app
+
+
+def _warn_if_missing_secret_key(app: Flask) -> None:
+    """In produzione (TESTING=False) avverte se FDP_SECRET_KEY non e' settata."""
+    if app.config.get("TESTING"):
+        return
+    if not os.environ.get("FDP_SECRET_KEY"):
+        app.logger.warning(
+            "FDP_SECRET_KEY env var non e' impostata. "
+            "La SECRET_KEY corrente e' ephemeral: a ogni restart le sessioni "
+            "esistenti saranno invalidate. Impostare FDP_SECRET_KEY in produzione."
+        )
 
 
 def _configure_logging(app: Flask) -> None:
