@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Dichiarazione mensile - Fogli di Percorso{% endblock %}
+{% block content %}
+<h2>Dichiarazione mensile - {{ month_label }} {{ target_month.year }}</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Punto di partenza:</strong> {{ coord.label }}</p>
+        <p><strong>Distanza stradale (one-way):</strong>
+           {{ "%.3f"|format(coord.road_km_to_workplace) }} km</p>
+        {% if rate %}
+        <p><strong>Rate corrente:</strong>
+           {{ rate.avg_consumption_km_l }} km/l - &euro;{{ rate.avg_fuel_price_eur_l }}/l</p>
+        {% else %}
+        <div class="alert alert-warning">Nessun rate configurato per il mese.</div>
+        {% endif %}
+    </div>
+</div>
+
+<p><em>Task 13 aggiungera' il form di inserimento.</em></p>
+
+<a href="{{ url_for('dashboard.index') }}" class="btn btn-link">Torna alla home</a>
+{% endblock %}
