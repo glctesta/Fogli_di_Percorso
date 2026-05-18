@@ -10,14 +10,71 @@
            {{ "%.3f"|format(coord.road_km_to_workplace) }} km</p>
         {% if rate %}
         <p><strong>Rate corrente:</strong>
-           {{ rate.avg_consumption_km_l }} km/l - &euro;{{ rate.avg_fuel_price_eur_l }}/l</p>
-        {% else %}
-        <div class="alert alert-warning">Nessun rate configurato per il mese.</div>
+           {{ rate.avg_consumption_km_l }} km/l - €{{ rate.avg_fuel_price_eur_l }}/l</p>
         {% endif %}
     </div>
 </div>
 
-<p><em>Task 13 aggiungera' il form di inserimento.</em></p>
+<form method="post" enctype="multipart/form-data" id="pathtrack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-<a href="{{ url_for('dashboard.index') }}" class="btn btn-link">Torna alla home</a>
+    <div class="mb-3">
+        <label class="form-label">Tipo rimborso</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="reimbursement_type"
+                   id="rt-fuel" value="CARBURANTE" checked>
+            <label class="form-check-label" for="rt-fuel">Carburante</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="reimbursement_type"
+                   id="rt-taxi" value="TAXI">
+            <label class="form-check-label" for="rt-taxi">Taxi</label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="number_of_trips" class="form-label">Numero viaggi (A/R)</label>
+        <input type="number" class="form-control" id="number_of_trips"
+               name="number_of_trips" min="1" max="31" required>
+        <div class="form-text">Il sistema considera ogni viaggio come andata + ritorno.</div>
+    </div>
+
+    <div id="taxi-section" style="display:none;">
+        <label class="form-label">Importi ricevute (€)</label>
+        <div id="taxi-amounts-list">
+            <input type="number" class="form-control mb-2" name="taxi_amount"
+                   step="0.01" min="0" placeholder="es. 12.50">
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mb-3"
+                id="add-taxi-amount">+ Aggiungi ricevuta</button>
+    </div>
+
+    <div class="mb-3">
+        <label for="sheet_pdf" class="form-label">Foglio di percorso (PDF, max 5 MB)</label>
+        <input type="file" class="form-control" id="sheet_pdf"
+               name="sheet_pdf" accept="application/pdf" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="receipt_pdf" class="form-label">Ricevute (PDF, max 5 MB ciascuna)</label>
+        <input type="file" class="form-control" id="receipt_pdf"
+               name="receipt_pdf" accept="application/pdf" multiple required>
+    </div>
+
+    <div class="mb-3">
+        <strong>Anteprima rimborso:</strong>
+        <span id="amount-preview" class="amount-preview">€ -</span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salva dichiarazione</button>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-link">Annulla</a>
+</form>
+
+<script>
+window.FDP_CONTEXT = {
+    roadKm: {{ coord.road_km_to_workplace|tojson }},
+    rate: {% if rate %}{{ {"km_l": rate.avg_consumption_km_l, "eur_l": rate.avg_fuel_price_eur_l}|tojson }}{% else %}null{% endif %}
+};
+</script>
+<script src="{{ url_for('static', filename='js/pathtracks.js') }}"></script>
 {% endblock %}

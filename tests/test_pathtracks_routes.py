@@ -109,3 +109,145 @@ def test_new_blocks_when_deadline_passed(
     response = client.get("/pathtracks/new", follow_redirects=True)
     assert response.status_code == 200
     assert b"chius" in response.data.lower() or b"scadut" in response.data.lower()
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_new_fuel_creates_declaration(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo,
+    mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.coordinate_repo import ActiveCoordinate
+    from fdp_app.repos.rate_repo import Rate
+    _login(client)
+    mock_coord_repo.find_active.return_value = ActiveCoordinate(
+        99, "Casa", 45.0, 9.0, 10.0,
+    )
+    mock_rate_repo.find_for_date.return_value = Rate(3, 15.0, 1.7)
+    mock_pathtrack_repo.find_active_for_month.return_value = None
+    mock_pathtrack_repo.insert.return_value = 555
+    mock_registry_repo.generate.return_value = 500
+
+    with patch("fdp_app.pathtracks.routes.get_request_db") as mock_get_db:
+        conn = MagicMock()
+        conn.autocommit = True
+        mock_get_db.return_value = conn
+
+        from io import BytesIO
+        response = client.post(
+            "/pathtracks/new",
+            data={
+                "reimbursement_type": "CARBURANTE",
+                "number_of_trips": "20",
+                "sheet_pdf": (BytesIO(b"%PDF-1.4 sheet"), "foglio.pdf"),
+                "receipt_pdf": (BytesIO(b"%PDF-1.4 receipt"), "ricevuta.pdf"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 302
+    assert "/pathtracks/555" in response.headers["Location"]
+    mock_pathtrack_repo.insert.assert_called_once()
+    kwargs = mock_pathtrack_repo.insert.call_args.kwargs
+    assert kwargs["reimbursement_type"] == "CARBURANTE"
+    assert kwargs["number_of_trips"] == 20
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_new_taxi_creates_declaration(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo,
+    mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.coordinate_repo import ActiveCoordinate
+    _login(client)
+    mock_coord_repo.find_active.return_value = ActiveCoordinate(
+        99, "Casa", 45.0, 9.0, 10.0,
+    )
+    mock_pathtrack_repo.find_active_for_month.return_value = None
+    mock_pathtrack_repo.insert.return_value = 556
+    mock_registry_repo.generate.return_value = 600
+
+    with patch("fdp_app.pathtracks.routes.get_request_db") as mock_get_db:
+        conn = MagicMock()
+        conn.autocommit = True
+        mock_get_db.return_value = conn
+
+        from io import BytesIO
+        response = client.post(
+            "/pathtracks/new",
+            data={
+                "reimbursement_type": "TAXI",
+                "number_of_trips": "10",
+                "taxi_amount": ["12.50", "8.30"],
+                "sheet_pdf": (BytesIO(b"%PDF-1.4 sheet"), "foglio.pdf"),
+                "receipt_pdf": [
+                    (BytesIO(b"%PDF-1.4 r1"), "r1.pdf"),
+                    (BytesIO(b"%PDF-1.4 r2"), "r2.pdf"),
+                ],
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 302
+    kwargs = mock_pathtrack_repo.insert.call_args.kwargs
+    assert kwargs["reimbursement_type"] == "TAXI"
+    assert kwargs["taxi_total_eur"] == pytest.approx(20.80)
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_new_rejects_missing_sheet_pdf(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.coordinate_repo import ActiveCoordinate
+    from fdp_app.repos.rate_repo import Rate
+    _login(client)
+    mock_coord_repo.find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
+    mock_rate_repo.find_for_date.return_value = Rate(3, 15.0, 1.7)
+    mock_pathtrack_repo.find_active_for_month.return_value = None
+
+    from io import BytesIO
+    response = client.post(
+        "/pathtracks/new",
+        data={
+            "reimbursement_type": "CARBURANTE",
+            "number_of_trips": "10",
+            "receipt_pdf": (BytesIO(b"%PDF-1.4"), "ricevuta.pdf"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"foglio" in response.data.lower()
+    mock_pathtrack_repo.insert.assert_not_called()
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_new_rejects_oversized_pdf(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.coordinate_repo import ActiveCoordinate
+    from fdp_app.repos.rate_repo import Rate
+    _login(client)
+    mock_coord_repo.find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
+    mock_rate_repo.find_for_date.return_value = Rate(3, 15.0, 1.7)
+    mock_pathtrack_repo.find_active_for_month.return_value = None
+
+    from io import BytesIO
+    big_pdf = b"%PDF-1.4" + (b"\x00" * (5 * 1024 * 1024 + 1))
+
+    response = client.post(
+        "/pathtracks/new",
+        data={
+            "reimbursement_type": "CARBURANTE",
+            "number_of_trips": "10",
+            "sheet_pdf": (BytesIO(big_pdf), "big.pdf"),
+            "receipt_pdf": (BytesIO(b"%PDF-1.4"), "r.pdf"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"5 mb" in response.data.lower() or b"troppo grande" in response.data.lower()
