@@ -65,11 +65,15 @@ def create():
 
     service = _build_service()
     try:
-        service.create(
+        new_id = service.create(
             employee_hire_history_id=session["user_id"],
             label=label,
             lat=lat,
             lon=lon,
+        )
+        current_app.logger.info(
+            "Coordinate created: user_id=%s coord_id=%s",
+            session["user_id"], new_id,
         )
         flash("Punto di partenza salvato.", "success")
     except ActiveCoordinateAlreadyExists:
@@ -77,7 +81,10 @@ def create():
             "Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo.",
             "danger",
         )
-    except RoutingError:
+    except RoutingError as e:
+        current_app.logger.warning(
+            "Routing failure for user_id=%s: %s", session["user_id"], e,
+        )
         flash(
             "Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi.",
             "danger",
@@ -101,6 +108,10 @@ def delete():
         employee_hire_history_id=session["user_id"],
     )
     if ok:
+        current_app.logger.info(
+            "Coordinate deleted: user_id=%s coord_id=%s",
+            session["user_id"], coordinate_id,
+        )
         flash("Punto di partenza cancellato.", "success")
     else:
         flash("Punto non trovato o non posseduto.", "warning")
