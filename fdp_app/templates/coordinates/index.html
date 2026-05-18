@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Punto di partenza - Fogli di Percorso{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+{% block content %}
+<h2>Punto di partenza</h2>
+
+{% if active %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">{{ active.label }}</h5>
+        <p class="card-text mb-1">
+            Coordinate: <code>{{ active.lat }}, {{ active.lon }}</code>
+        </p>
+        {% if active.road_km_to_workplace is not none %}
+        <p class="card-text mb-1">
+            Distanza stradale verso la sede:
+            <strong>{{ "%.3f"|format(active.road_km_to_workplace) }} km</strong>
+        </p>
+        {% endif %}
+        <form action="{{ url_for('coordinates.delete') }}" method="post" class="mt-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="coordinate_id" value="{{ active.coordinate_id }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm"
+                    onclick="return confirm('Cancellare il punto di partenza?');">
+                Cancella punto
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    Nessun punto attivo. Clicca sulla mappa per scegliere il tuo punto di partenza.
+</div>
+{% endif %}
+
+<div id="map" class="map-container mb-3"></div>
+
+{% if not active %}
+<form id="save-form" action="{{ url_for('coordinates.create') }}" method="post"
+      class="card card-body" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="lat" id="input-lat">
+    <input type="hidden" name="lon" id="input-lon">
+    <div class="mb-2">
+        <label class="form-label" for="input-label">Etichetta (es. "Casa", "Via Roma 5")</label>
+        <input class="form-control" type="text" name="label" id="input-label"
+               required maxlength="200" autocomplete="off">
+    </div>
+    <p class="text-muted">
+        Coordinate selezionate: <code id="display-coords">-</code><br>
+        Indirizzo (auto): <code id="display-address">-</code>
+    </p>
+    <button type="submit" class="btn btn-primary">Salva punto di partenza</button>
+</form>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+window.FDP_WORKPLACE = {{ {"lat": workplace.lat, "lon": workplace.lon, "name": workplace.name}|tojson }};
+{% if active %}
+window.FDP_ACTIVE = {{ {"lat": active.lat, "lon": active.lon, "label": active.label}|tojson }};
+{% else %}
+window.FDP_ACTIVE = null;
+{% endif %}
+</script>
+<script src="{{ url_for('static', filename='js/coordinates.js') }}"></script>
+{% endblock %}

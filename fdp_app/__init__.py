@@ -83,6 +83,8 @@ def _register_blueprints(app: Flask) -> None:
     # Importazioni interne per evitare cicli
     from fdp_app.auth.routes import bp as auth_bp
     from fdp_app.dashboard.routes import bp as dashboard_bp
+    from fdp_app.coordinates.routes import bp as coordinates_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(coordinates_bp)
