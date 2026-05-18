@@ -11,22 +11,18 @@ from fdp_app.coordinates.service import (
     ActiveCoordinateAlreadyExists,
     CoordinateService,
 )
-from fdp_app.pathtracks.routing import RoutingClient, RoutingError
+from fdp_app.pathtracks.routing import RoutingError
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 
 bp = Blueprint("coordinates", __name__)
 
 
 def _build_service() -> CoordinateService:
-    s = current_app.config["_settings_cls"]
     db = current_app.config["_db"]
     repo = CoordinateRepo(db)
-    routing = RoutingClient(
-        osrm_base=s.OSRM_BASE,
-        ors_base=s.ORS_BASE,
-        ors_api_key=s.ORS_API_KEY,
-    )
-    return CoordinateService(repo=repo, routing=routing, workplace=s.workplace())
+    routing = current_app.config["_routing"]
+    workplace = current_app.config["_workplace"]
+    return CoordinateService(repo=repo, routing=routing, workplace=workplace)
 
 
 @bp.route("/coordinates", methods=["GET"])
@@ -34,7 +30,7 @@ def _build_service() -> CoordinateService:
 def index():
     service = _build_service()
     active = service.find_active(session["user_id"])
-    workplace = current_app.config["_settings_cls"].workplace()
+    workplace = current_app.config["_workplace"]
     return render_template(
         "coordinates/index.html",
         active=active,

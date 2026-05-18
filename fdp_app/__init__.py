@@ -24,6 +24,14 @@ def create_app(*, settings: type[Settings] | None = None,
     # DI del database
     app.config["_db"] = db or Database()
 
+    from fdp_app.pathtracks.routing import RoutingClient
+    app.config["_routing"] = RoutingClient(
+        osrm_base=settings.OSRM_BASE,
+        ors_base=settings.ORS_BASE,
+        ors_api_key=settings.ORS_API_KEY,
+    )
+    app.config["_workplace"] = settings.workplace()
+
     csrf.init_app(app)
 
     _warn_if_missing_secret_key(app)

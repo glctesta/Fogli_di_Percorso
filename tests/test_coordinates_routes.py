@@ -18,11 +18,10 @@ def mock_coord_repo():
 
 
 @pytest.fixture
-def mock_routing():
-    with patch("fdp_app.coordinates.routes.RoutingClient") as cls:
-        instance = MagicMock()
-        cls.return_value = instance
-        yield instance
+def mock_routing(app):
+    instance = MagicMock()
+    app.config["_routing"] = instance
+    yield instance
 
 
 def _login(client, employee_hire_history_id=10):
