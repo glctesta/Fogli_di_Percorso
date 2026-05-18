@@ -283,3 +283,53 @@ def test_view_not_owned_returns_404(client, mock_coord_repo, mock_rate_repo, moc
 
     response = client.get("/pathtracks/999")
     assert response.status_code == 404
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_delete_soft_deletes_within_window(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.pathtrack_repo import PathTrackRow
+    from datetime import date as Date
+    _login(client)
+    mock_pathtrack_repo.find_by_id.return_value = PathTrackRow(
+        path_track_id=100, registry_id=500, date_path_track=Date(2026, 4, 1),
+        declarated_path_id=99, in_behalf_of_id=None,
+        reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
+        rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
+    )
+    mock_pathtrack_repo.soft_delete.return_value = True
+
+    response = client.post(
+        "/pathtracks/100/delete",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    mock_pathtrack_repo.soft_delete.assert_called_once_with(
+        path_track_id=100, employee_hire_history_id=10
+    )
+
+
+@freeze_time("2026-05-06 00:00:01+02:00")
+def test_post_delete_rejects_after_window(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.pathtrack_repo import PathTrackRow
+    from datetime import date as Date
+    _login(client)
+    mock_pathtrack_repo.find_by_id.return_value = PathTrackRow(
+        path_track_id=100, registry_id=500, date_path_track=Date(2026, 4, 1),
+        declarated_path_id=99, in_behalf_of_id=None,
+        reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
+        rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
+    )
+
+    response = client.post(
+        "/pathtracks/100/delete",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"chius" in response.data.lower() or b"scadut" in response.data.lower()
+    mock_pathtrack_repo.soft_delete.assert_not_called()

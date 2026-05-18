@@ -235,10 +235,36 @@ def download_doc(doc_id: int):
     )
 
 
-@bp.route("/<int:path_track_id>/delete", methods=["POST"], endpoint="delete")
+@bp.route("/<int:path_track_id>/delete", methods=["POST"])
 @login_required
-def _delete_stub(path_track_id):
-    return "delete not yet implemented", 501
+def delete(path_track_id: int):
+    from flask import abort
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    row = pathtrack_repo.find_by_id(
+        path_track_id=path_track_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if row is None:
+        abort(404)
+
+    if not is_open_for_month(row.date_path_track):
+        flash("Periodo di modifica chiuso. Cancellazione non consentita.", "danger")
+        return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+    ok = pathtrack_repo.soft_delete(
+        path_track_id=path_track_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if ok:
+        doc_repo = PathTrackDocRepo(current_app.config["_db"])
+        doc_repo.soft_delete_all_for_pathtrack(path_track_id=path_track_id)
+        current_app.logger.info(
+            "PathTrack deleted: user_id=%s id=%s", session["user_id"], path_track_id
+        )
+        flash("Dichiarazione cancellata.", "success")
+    else:
+        flash("Impossibile cancellare (record non trovato o gia' cancellato).", "warning")
+    return redirect(url_for("pathtracks.list_mine"))
 
 
 @bp.route("", methods=["GET"], endpoint="list_mine")
