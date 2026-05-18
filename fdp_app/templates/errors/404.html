@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Pagina non trovata{% endblock %}
+{% block content %}
+<div class="alert alert-info">
+    <h3>Pagina non trovata</h3>
+    <p>L'indirizzo richiesto non esiste.</p>
+    <a class="btn btn-primary" href="{{ url_for('dashboard.index') if session.get('user_id') else url_for('auth.login') }}">Torna alla home</a>
+</div>
+{% endblock %}

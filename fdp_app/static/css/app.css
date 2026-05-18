@@ -1,0 +1,13 @@
+body {
+    background-color: #f7f8fa;
+}
+.map-container {
+    height: 480px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+.amount-preview {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0d6efd;
+}
