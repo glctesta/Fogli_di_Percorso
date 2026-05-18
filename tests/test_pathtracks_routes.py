@@ -351,3 +351,32 @@ def test_list_shows_user_declarations(
     assert b"CARBURANTE" in response.data
     assert b"TAXI" in response.data
     assert b"45.33" in response.data or b"45,33" in response.data
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_post_new_rejects_non_pdf_sheet(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.coordinate_repo import ActiveCoordinate
+    from fdp_app.repos.rate_repo import Rate
+    _login(client)
+    mock_coord_repo.find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
+    mock_rate_repo.find_for_date.return_value = Rate(3, 15.0, 1.7)
+    mock_pathtrack_repo.find_active_for_month.return_value = None
+
+    from io import BytesIO
+    response = client.post(
+        "/pathtracks/new",
+        data={
+            "reimbursement_type": "CARBURANTE",
+            "number_of_trips": "10",
+            "sheet_pdf": (BytesIO(b"<html>not a pdf</html>"), "fake.pdf"),
+            "receipt_pdf": (BytesIO(b"%PDF-1.4 r"), "r.pdf"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"pdf" in response.data.lower()
+    mock_pathtrack_repo.insert.assert_not_called()

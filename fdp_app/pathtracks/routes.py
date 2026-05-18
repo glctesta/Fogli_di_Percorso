@@ -115,6 +115,9 @@ def create():
     if len(sheet_bytes) > max_bytes:
         flash("Foglio di percorso troppo grande (max 5 MB).", "danger")
         return redirect(url_for("pathtracks.new"))
+    if not sheet_bytes.startswith(b"%PDF-"):
+        flash("Il foglio di percorso non e' un PDF valido.", "danger")
+        return redirect(url_for("pathtracks.new"))
 
     receipt_bytes_list = []
     for f in receipt_files:
