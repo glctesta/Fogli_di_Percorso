@@ -156,7 +156,7 @@ def test_post_delete_soft_deletes_owned(client, mock_coord_repo):
     )
 
 
-def test_post_delete_not_owned_returns_404(client, mock_coord_repo):
+def test_post_delete_not_owned_shows_warning(client, mock_coord_repo):
     _login(client)
     mock_coord_repo.soft_delete.return_value = False  # nessuna riga aggiornata
 
