@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Le mie dichiarazioni - Fogli di Percorso{% endblock %}
+{% block content %}
+<h2>Le mie dichiarazioni</h2>
+
+<a href="{{ url_for('pathtracks.new') }}" class="btn btn-primary mb-3">Nuova dichiarazione</a>
+
+{% if rows %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Mese</th>
+            <th>Tipo</th>
+            <th>Viaggi A/R</th>
+            <th>Importo</th>
+            <th>N. registro</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ month_names[row.date_path_track.month] }} {{ row.date_path_track.year }}</td>
+            <td>{{ row.reimbursement_type }}</td>
+            <td>{{ row.number_of_trips }}</td>
+            <td>€ {{ "%.2f"|format(row.computed_amount_eur) }}</td>
+            <td>{{ row.registry_id }}</td>
+            <td>
+                <a href="{{ url_for('pathtracks.view', path_track_id=row.path_track_id) }}"
+                   class="btn btn-sm btn-outline-primary">Dettagli</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">Nessuna dichiarazione presente.</div>
+{% endif %}
+{% endblock %}

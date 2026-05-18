@@ -267,7 +267,15 @@ def delete(path_track_id: int):
     return redirect(url_for("pathtracks.list_mine"))
 
 
-@bp.route("", methods=["GET"], endpoint="list_mine")
+@bp.route("", methods=["GET"])
 @login_required
-def _list_stub():
-    return "List - not implemented", 501
+def list_mine():
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    rows = pathtrack_repo.list_for_employee(
+        employee_hire_history_id=session["user_id"],
+    )
+    return render_template(
+        "pathtracks/list.html",
+        rows=rows,
+        month_names=_MONTH_NAMES_IT,
+    )

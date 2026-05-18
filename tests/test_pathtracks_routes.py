@@ -333,3 +333,21 @@ def test_post_delete_rejects_after_window(
     assert response.status_code == 200
     assert b"chius" in response.data.lower() or b"scadut" in response.data.lower()
     mock_pathtrack_repo.soft_delete.assert_not_called()
+
+
+def test_list_shows_user_declarations(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo
+):
+    from fdp_app.repos.pathtrack_repo import PathTrackRow
+    from datetime import date as Date
+    _login(client)
+    mock_pathtrack_repo.list_for_employee.return_value = [
+        PathTrackRow(1, 100, Date(2026, 4, 1), 99, None, "CARBURANTE", 20, 10.0, 3, None, 45.33),
+        PathTrackRow(2, 101, Date(2026, 3, 1), 99, None, "TAXI", 10, 8.0, None, 30.0, 30.0),
+    ]
+
+    response = client.get("/pathtracks")
+    assert response.status_code == 200
+    assert b"CARBURANTE" in response.data
+    assert b"TAXI" in response.data
+    assert b"45.33" in response.data or b"45,33" in response.data
