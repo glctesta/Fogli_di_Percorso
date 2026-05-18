@@ -17,6 +17,8 @@ encryption_key.key
 email_key.key
 db_config.enc
 email_credentials.enc
+.env
+*.env
 
 # Claude Code local config
 .claude/

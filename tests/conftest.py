@@ -25,8 +25,15 @@ def mock_db():
 
 @pytest.fixture
 def app(mock_db):
-    app = create_app(settings=TestSettings, db=mock_db)
-    yield app
+    application = create_app(settings=TestSettings, db=mock_db)
+    yield application
+    # Chiude i file handler attaccati a app.logger per evitare leak
+    for handler in list(application.logger.handlers):
+        try:
+            handler.close()
+        except Exception:
+            pass
+        application.logger.removeHandler(handler)
 
 
 @pytest.fixture
