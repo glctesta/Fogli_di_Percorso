@@ -47,8 +47,11 @@ class EmployeeRepo:
 
     def find_user_by_nomeuser(self, nome_user: str) -> Optional[EmployeeAuthRow]:
         cursor = self._db.cursor()
-        cursor.execute(_QUERY_FIND_BY_NOMEUSER, nome_user)
-        row = cursor.fetchone()
+        try:
+            cursor.execute(_QUERY_FIND_BY_NOMEUSER, nome_user)
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
         if row is None:
             return None
         return EmployeeAuthRow(

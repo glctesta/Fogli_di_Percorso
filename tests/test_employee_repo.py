@@ -55,3 +55,26 @@ def test_find_user_by_nomeuser_passes_username_as_parameter():
     sql_text, *params = args
     assert "k.NomeUser = ?" in sql_text
     assert params == ["xyz"]
+
+
+def test_find_user_by_nomeuser_closes_cursor():
+    db = _make_db_with_rows([("p", 1, "S", "N", 1, 70)])
+    repo = EmployeeRepo(db)
+
+    repo.find_user_by_nomeuser("anyone")
+
+    cursor = db.cursor.return_value
+    cursor.close.assert_called_once()
+
+
+def test_find_user_by_nomeuser_closes_cursor_even_when_execute_raises():
+    db = MagicMock()
+    cursor = MagicMock()
+    cursor.execute.side_effect = RuntimeError("DB down")
+    db.cursor.return_value = cursor
+    repo = EmployeeRepo(db)
+
+    with pytest.raises(RuntimeError):
+        repo.find_user_by_nomeuser("anyone")
+
+    cursor.close.assert_called_once()
