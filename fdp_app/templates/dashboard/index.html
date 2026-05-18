@@ -1,34 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Home - Fogli di Percorso{% endblock %}
 {% block content %}
-<h2>Benvenuto, {{ full_name }}</h2>
-<p class="text-muted">SubCdc: {{ sub_cdc_id }} - Codice Funzione: {{ function_code }}</p>
+<div class="d-flex align-items-center mb-4">
+    <img src="{{ url_for('static', filename='img/logo.png') }}"
+         alt="" class="me-3" style="height: 56px; width: auto;">
+    <div>
+        <h2 class="mb-0" style="border-bottom: none; padding-bottom: 0;">
+            Benvenuto, {{ full_name }}
+        </h2>
+        <p class="text-muted mb-0">
+            <i class="bi bi-building"></i> SubCdc: <strong>{{ sub_cdc_id }}</strong>
+            &middot;
+            <i class="bi bi-briefcase"></i> Codice Funzione: <strong>{{ function_code }}</strong>
+        </p>
+    </div>
+</div>
 
-<div class="row mt-4">
+<div class="row g-3 mt-2">
     <div class="col-md-4">
-        <div class="card">
+        <div class="card fdp-dashboard-card h-100">
             <div class="card-body">
+                <i class="bi bi-geo-alt-fill"></i>
                 <h5 class="card-title">Punto di partenza</h5>
-                <p class="card-text">Definisci o aggiorna il tuo punto di partenza sulla mappa.</p>
-                <a class="btn btn-outline-primary" href="{{ url_for('coordinates.index') }}">Vai alla mappa</a>
+                <p class="card-text text-muted">
+                    Definisci o aggiorna il tuo punto di partenza sulla mappa.
+                </p>
+                <a class="btn btn-outline-primary"
+                   href="{{ url_for('coordinates.index') }}">
+                    Vai alla mappa <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="card">
+        <div class="card fdp-dashboard-card h-100">
             <div class="card-body">
+                <i class="bi bi-receipt"></i>
                 <h5 class="card-title">Dichiarazione mensile</h5>
-                <p class="card-text">Inserisci viaggi, carica i PDF e calcola il rimborso.</p>
-                <a class="btn btn-outline-primary" href="{{ url_for('pathtracks.list_mine') }}">Vai alle dichiarazioni</a>
+                <p class="card-text text-muted">
+                    Inserisci viaggi, carica i PDF e calcola il rimborso.
+                </p>
+                <a class="btn btn-outline-primary"
+                   href="{{ url_for('pathtracks.list_mine') }}">
+                    Vai alle dichiarazioni <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="card">
+        <div class="card fdp-dashboard-card h-100">
             <div class="card-body">
+                <i class="bi bi-people-fill"></i>
                 <h5 class="card-title">Amministrazione</h5>
-                <p class="card-text">Rappresenta colleghi e consulta lo storico.</p>
-                <a class="btn btn-outline-primary disabled" href="#">Disponibile nel Piano 4</a>
+                <p class="card-text text-muted">
+                    Rappresenta colleghi e consulta lo storico.
+                </p>
+                <a class="btn btn-outline-primary disabled" href="#">
+                    Disponibile nel Piano 4
+                </a>
             </div>
         </div>
     </div>

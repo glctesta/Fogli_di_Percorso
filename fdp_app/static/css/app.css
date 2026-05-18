@@ -1,13 +1,267 @@
+/* ============================================================
+   Fogli di Percorso - stylesheet applicativo
+   Palette: blu navy aziendale + accent ciano
+   ============================================================ */
+
+:root {
+    --fdp-primary: #0b2a5b;
+    --fdp-primary-dark: #07193b;
+    --fdp-accent: #1d9bf0;
+    --fdp-bg: #f5f7fb;
+    --fdp-surface: #ffffff;
+    --fdp-border: #e3e7ef;
+    --fdp-muted: #6b7280;
+}
+
+/* Base ------------------------------------------------------ */
 body {
-    background-color: #f7f8fa;
+    background-color: var(--fdp-bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1f2937;
 }
-.map-container {
-    height: 480px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-}
-.amount-preview {
-    font-size: 1.5rem;
+
+h1, h2, h3, h4, h5 {
+    color: var(--fdp-primary);
     font-weight: 600;
-    color: #0d6efd;
+}
+
+h2 {
+    border-bottom: 2px solid var(--fdp-border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+a {
+    color: var(--fdp-accent);
+}
+
+a:hover {
+    color: var(--fdp-primary);
+}
+
+/* Navbar ---------------------------------------------------- */
+.fdp-navbar {
+    background: linear-gradient(135deg, var(--fdp-primary) 0%, var(--fdp-primary-dark) 100%);
+    border-bottom: 3px solid var(--fdp-accent);
+}
+
+.fdp-navbar .navbar-brand {
+    font-size: 1.15rem;
+    letter-spacing: 0.3px;
+}
+
+.navbar-logo {
+    height: 36px;
+    width: auto;
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 3px 5px;
+}
+
+.fdp-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    transition: color 0.15s ease-in-out;
+}
+
+.fdp-navbar .nav-link:hover,
+.fdp-navbar .nav-link:focus {
+    color: #ffffff;
+}
+
+.fdp-navbar .nav-link i {
+    margin-right: 0.25rem;
+}
+
+/* Cards ----------------------------------------------------- */
+.card {
+    border: 1px solid var(--fdp-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(11, 42, 91, 0.04);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(11, 42, 91, 0.08);
+}
+
+.card .card-title {
+    color: var(--fdp-primary);
+    font-weight: 600;
+}
+
+/* Pulsanti -------------------------------------------------- */
+.btn-primary {
+    background-color: var(--fdp-primary);
+    border-color: var(--fdp-primary);
+    font-weight: 500;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--fdp-primary-dark);
+    border-color: var(--fdp-primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--fdp-primary);
+    border-color: var(--fdp-primary);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background-color: var(--fdp-primary);
+    border-color: var(--fdp-primary);
+    color: #ffffff;
+}
+
+/* Tabelle --------------------------------------------------- */
+.table {
+    background-color: var(--fdp-surface);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead {
+    background-color: var(--fdp-primary);
+    color: #ffffff;
+}
+
+.table thead th {
+    border-bottom: none;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    padding: 0.85rem 0.75rem;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: rgba(11, 42, 91, 0.02);
+}
+
+/* Form ------------------------------------------------------ */
+.form-control:focus,
+.form-check-input:focus {
+    border-color: var(--fdp-accent);
+    box-shadow: 0 0 0 0.2rem rgba(29, 155, 240, 0.18);
+}
+
+.form-check-input:checked {
+    background-color: var(--fdp-primary);
+    border-color: var(--fdp-primary);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-text {
+    color: var(--fdp-muted);
+}
+
+/* Mappa ----------------------------------------------------- */
+.map-container {
+    height: 500px;
+    border: 1px solid var(--fdp-border);
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+}
+
+/* Alerts ---------------------------------------------------- */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.alert-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* Pagine specifiche ---------------------------------------- */
+
+/* Login */
+.fdp-login-wrapper {
+    min-height: calc(100vh - 240px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fdp-login-card {
+    max-width: 420px;
+    width: 100%;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(11, 42, 91, 0.12);
+}
+
+.fdp-login-logo {
+    height: 64px;
+    width: auto;
+    margin-bottom: 1rem;
+}
+
+/* Anteprima importo */
+.amount-preview {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--fdp-primary);
+    background-color: rgba(29, 155, 240, 0.08);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+/* Dashboard cards */
+.fdp-dashboard-card .card-body {
+    padding: 1.75rem;
+}
+
+.fdp-dashboard-card .bi {
+    font-size: 2.5rem;
+    color: var(--fdp-accent);
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+/* Footer ---------------------------------------------------- */
+.fdp-footer {
+    background-color: var(--fdp-surface);
+    border-top: 1px solid var(--fdp-border);
+}
+
+.footer-logo {
+    height: 22px;
+    width: auto;
+    vertical-align: middle;
+}
+
+/* Utility -------------------------------------------------- */
+.fdp-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(29, 155, 240, 0.12);
+    color: var(--fdp-accent);
+    font-size: 1.5rem;
 }
