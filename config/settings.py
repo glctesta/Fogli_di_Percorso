@@ -32,7 +32,7 @@ class Settings:
     NOMINATIM_USER_AGENT: str = "FogliDiPercorso/1.0 (intranet)"
 
     # App
-    APP_URL: str = os.environ.get("FDP_APP_URL", "http://localhost:5000")
+    APP_URL: str = os.environ.get("FDP_APP_URL", "http://localhost:5010")
     EMPLOYER_ID: int = 2
     MIN_FUNCTION_CODE_FOR_LOGIN: int = 60  # esclusivo: serve > 60
     REGISTRY_TYPE_ID: int = 790
