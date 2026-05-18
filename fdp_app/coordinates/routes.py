@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 from flask import (
-    Blueprint, current_app, render_template, session,
+    Blueprint, current_app, flash, redirect, render_template, request,
+    session, url_for,
 )
 
 from fdp_app.auth.decorators import login_required
-from fdp_app.coordinates.service import CoordinateService
-from fdp_app.pathtracks.routing import RoutingClient
+from fdp_app.coordinates.service import (
+    ActiveCoordinateAlreadyExists,
+    CoordinateService,
+)
+from fdp_app.pathtracks.routing import RoutingClient, RoutingError
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 
 bp = Blueprint("coordinates", __name__)
@@ -38,14 +42,66 @@ def index():
     )
 
 
-# Stub temporanei - implementazione reale in Task 10
-@bp.route("/coordinates", methods=["POST"], endpoint="create")
+@bp.route("/coordinates", methods=["POST"])
 @login_required
-def _create_stub():
-    return "Not yet implemented", 501
+def create():
+    try:
+        lat = float(request.form.get("lat") or "")
+        lon = float(request.form.get("lon") or "")
+    except ValueError:
+        flash("Coordinate non valide.", "danger")
+        return redirect(url_for("coordinates.index"))
+
+    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+        flash("Coordinate non valide (lat/lon fuori range).", "danger")
+        return redirect(url_for("coordinates.index"))
+
+    label = (request.form.get("label") or "").strip()
+    if not label:
+        flash("Etichetta obbligatoria.", "danger")
+        return redirect(url_for("coordinates.index"))
+    if len(label) > 200:
+        label = label[:200]
+
+    service = _build_service()
+    try:
+        service.create(
+            employee_hire_history_id=session["user_id"],
+            label=label,
+            lat=lat,
+            lon=lon,
+        )
+        flash("Punto di partenza salvato.", "success")
+    except ActiveCoordinateAlreadyExists:
+        flash(
+            "Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo.",
+            "danger",
+        )
+    except RoutingError:
+        flash(
+            "Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi.",
+            "danger",
+        )
+
+    return redirect(url_for("coordinates.index"))
 
 
-@bp.route("/coordinates/delete", methods=["POST"], endpoint="delete")
+@bp.route("/coordinates/delete", methods=["POST"])
 @login_required
-def _delete_stub():
-    return "Not yet implemented", 501
+def delete():
+    try:
+        coordinate_id = int(request.form.get("coordinate_id") or "")
+    except ValueError:
+        flash("Identificativo punto non valido.", "danger")
+        return redirect(url_for("coordinates.index"))
+
+    service = _build_service()
+    ok = service.delete(
+        coordinate_id=coordinate_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if ok:
+        flash("Punto di partenza cancellato.", "success")
+    else:
+        flash("Punto non trovato o non posseduto.", "warning")
+    return redirect(url_for("coordinates.index"))
