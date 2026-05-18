@@ -45,8 +45,16 @@ class EmployeeRepo:
     def __init__(self, db) -> None:
         self._db = db
 
+    def _open_cursor(self):
+        """Apre un cursore. In production usa flask.g; in test delega a self._db.cursor()."""
+        from flask import has_app_context
+        if has_app_context():
+            from fdp_app.db import get_request_db
+            return get_request_db().cursor()
+        return self._db.cursor()
+
     def find_user_by_nomeuser(self, nome_user: str) -> Optional[EmployeeAuthRow]:
-        cursor = self._db.cursor()
+        cursor = self._open_cursor()
         try:
             cursor.execute(_QUERY_FIND_BY_NOMEUSER, nome_user)
             row = cursor.fetchone()

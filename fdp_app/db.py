@@ -1,40 +1,48 @@
-"""Wrapper attorno a db_connection.DatabaseConnection per dependency injection."""
+"""Database con per-request connection via flask.g."""
 from __future__ import annotations
 
-import threading
 from typing import Optional
+
+from flask import current_app, g, has_app_context
 
 from config_manager import ConfigManager
 from db_connection import DatabaseConnection
 
 
 class Database:
-    """Wrapper iniettabile: in produzione delega a DatabaseConnection esistente.
-
-    In test viene sostituito con MagicMock.
-
-    Thread safety: pyodbc.Connection NON e' condivisibile fra thread.
-    `cursor()` e' protetto da un Lock; questo serializza i thread di
-    Waitress sul singolo `pyodbc.Connection` cached. Per il Piano 2 e'
-    sufficiente (load basso). Piano 3 introdurra' una connessione per
-    richiesta via `flask.g` per migliorare il throughput.
+    """Wrapper iniettabile: usa DatabaseConnection legacy per costruire
+    nuove connessioni `pyodbc`. Il lifecycle e' gestito da flask.g
+    (vedi `get_request_db` e `teardown_request_db`).
     """
 
     def __init__(self, config_manager: Optional[ConfigManager] = None) -> None:
         self._cm = config_manager or ConfigManager()
-        self._conn = DatabaseConnection(self._cm)
-        self._lock = threading.Lock()
 
     def connect(self):
-        return self._conn.connect()
+        """Crea una NUOVA pyodbc.Connection. Non e' cached qui."""
+        dc = DatabaseConnection(self._cm)
+        return dc.connect()
 
-    def disconnect(self) -> None:
-        self._conn.disconnect()
 
-    def cursor(self):
-        """Ritorna un cursore. Caller responsabile della chiusura.
+def get_request_db():
+    """Ritorna la connection associata alla request corrente.
 
-        Lock serializza l'accesso al `pyodbc.Connection` underlying.
-        """
-        with self._lock:
-            return self.connect().cursor()
+    Crea e cacha su flask.g al primo accesso. La connection sara' chiusa
+    da `teardown_request_db` al termine della request.
+    """
+    if not has_app_context():
+        raise RuntimeError("get_request_db chiamato fuori da una request")
+    if "db_conn" not in g:
+        db: Database = current_app.config["_db"]
+        g.db_conn = db.connect()
+    return g.db_conn
+
+
+def teardown_request_db(exception):
+    """Da registrare con app.teardown_appcontext. Chiude la connection."""
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass

@@ -31,6 +31,9 @@ def create_app(*, settings: type[Settings] | None = None,
     _register_error_handlers(app)
     _register_blueprints(app)
 
+    from fdp_app.db import teardown_request_db
+    app.teardown_appcontext(teardown_request_db)
+
     return app
 
 

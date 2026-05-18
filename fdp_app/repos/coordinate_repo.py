@@ -49,8 +49,15 @@ class CoordinateRepo:
     def __init__(self, db) -> None:
         self._db = db
 
+    def _open_cursor(self):
+        from flask import has_app_context
+        if has_app_context():
+            from fdp_app.db import get_request_db
+            return get_request_db().cursor()
+        return self._db.cursor()
+
     def find_active(self, employee_hire_history_id: int) -> Optional[ActiveCoordinate]:
-        cursor = self._db.cursor()
+        cursor = self._open_cursor()
         try:
             cursor.execute(_QUERY_FIND_ACTIVE, employee_hire_history_id)
             row = cursor.fetchone()
@@ -75,7 +82,7 @@ class CoordinateRepo:
         lon: float,
         road_km_to_workplace: float,
     ) -> int:
-        cursor = self._db.cursor()
+        cursor = self._open_cursor()
         try:
             cursor.execute(
                 _QUERY_INSERT,
@@ -93,7 +100,7 @@ class CoordinateRepo:
     def soft_delete(
         self, *, coordinate_id: int, employee_hire_history_id: int
     ) -> bool:
-        cursor = self._db.cursor()
+        cursor = self._open_cursor()
         try:
             cursor.execute(_QUERY_SOFT_DELETE, coordinate_id, employee_hire_history_id)
             return cursor.rowcount > 0
