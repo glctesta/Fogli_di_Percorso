@@ -251,3 +251,35 @@ def test_post_new_rejects_oversized_pdf(
 
     assert response.status_code == 200
     assert b"5 mb" in response.data.lower() or b"troppo grande" in response.data.lower()
+
+
+def test_view_requires_login(client):
+    response = client.get("/pathtracks/1", follow_redirects=False)
+    assert response.status_code == 302
+
+
+def test_view_shows_declaration(client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo):
+    from fdp_app.repos.pathtrack_repo import PathTrackRow
+    from datetime import date as Date
+    _login(client)
+    mock_pathtrack_repo.find_by_id.return_value = PathTrackRow(
+        path_track_id=100, registry_id=500, date_path_track=Date(2026, 4, 1),
+        declarated_path_id=99, in_behalf_of_id=None,
+        reimbursement_type="CARBURANTE", number_of_trips=20, road_km=10.0,
+        rate_id_used=3, taxi_total_eur=None, computed_amount_eur=45.33,
+    )
+    mock_doc_repo.list_for_pathtrack.return_value = []
+
+    response = client.get("/pathtracks/100")
+    assert response.status_code == 200
+    assert b"CARBURANTE" in response.data
+    assert b"45.33" in response.data or b"45,33" in response.data
+    assert b"Aprile" in response.data
+
+
+def test_view_not_owned_returns_404(client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo, mock_doc_repo, mock_registry_repo):
+    _login(client)
+    mock_pathtrack_repo.find_by_id.return_value = None
+
+    response = client.get("/pathtracks/999")
+    assert response.status_code == 404

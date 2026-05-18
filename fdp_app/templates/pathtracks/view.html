@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Dichiarazione #{{ row.path_track_id }} - Fogli di Percorso{% endblock %}
+{% block content %}
+<h2>Dichiarazione - {{ month_label }} {{ row.date_path_track.year }}</h2>
+
+<table class="table">
+    <tbody>
+        <tr><th>Numero registro</th><td>{{ row.registry_id }}</td></tr>
+        <tr><th>Tipo rimborso</th><td>{{ row.reimbursement_type }}</td></tr>
+        <tr><th>Numero viaggi A/R</th><td>{{ row.number_of_trips }}</td></tr>
+        <tr><th>Distanza one-way</th><td>{{ "%.3f"|format(row.road_km) }} km</td></tr>
+        {% if row.taxi_total_eur is not none %}
+        <tr><th>Totale taxi (ricevute)</th><td>€ {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
+        {% endif %}
+        <tr><th>Importo rimborso</th><td><strong>€ {{ "%.2f"|format(row.computed_amount_eur) }}</strong></td></tr>
+    </tbody>
+</table>
+
+<h4>Documenti</h4>
+{% if docs %}
+<ul class="list-group mb-3">
+    {% for doc in docs %}
+    <li class="list-group-item">
+        <a href="{{ url_for('pathtracks.download_doc', doc_id=doc.doc_id) }}">{{ doc.doc_title }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted">Nessun documento.</p>
+{% endif %}
+
+{% if can_edit %}
+<form action="{{ url_for('pathtracks.delete', path_track_id=row.path_track_id) }}"
+      method="post" class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-danger"
+            onclick="return confirm('Cancellare la dichiarazione?');">
+        Cancella
+    </button>
+</form>
+{% else %}
+<p class="text-muted"><em>Periodo di modifica chiuso (oltre il 5 del mese successivo).</em></p>
+{% endif %}
+
+<a href="{{ url_for('pathtracks.list_mine') }}" class="btn btn-link">Torna alla lista</a>
+{% endblock %}

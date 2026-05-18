@@ -183,11 +183,62 @@ def create():
         return redirect(url_for("pathtracks.new"))
 
 
-# Stub temporanei per Tasks 13-16
-@bp.route("/<int:path_track_id>", methods=["GET"], endpoint="view")
+@bp.route("/<int:path_track_id>", methods=["GET"])
 @login_required
-def _view_stub(path_track_id):
-    return f"View {path_track_id} - not implemented", 501
+def view(path_track_id: int):
+    from flask import abort
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    row = pathtrack_repo.find_by_id(
+        path_track_id=path_track_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if row is None:
+        abort(404)
+    doc_repo = PathTrackDocRepo(current_app.config["_db"])
+    docs = doc_repo.list_for_pathtrack(path_track_id=path_track_id)
+
+    target_month = row.date_path_track
+    can_edit = is_open_for_month(target_month)
+    return render_template(
+        "pathtracks/view.html",
+        row=row,
+        docs=docs,
+        month_label=_MONTH_NAMES_IT[target_month.month],
+        can_edit=can_edit,
+    )
+
+
+@bp.route("/docs/<int:doc_id>/download", methods=["GET"])
+@login_required
+def download_doc(doc_id: int):
+    from flask import abort, Response
+    doc_repo = PathTrackDocRepo(current_app.config["_db"])
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    try:
+        pdf_bytes, title = doc_repo.get_blob(doc_id=doc_id)
+    except FileNotFoundError:
+        abort(404)
+    # Ownership check (O(n*m); ottimizzazione in Piano 4)
+    own_path_tracks = pathtrack_repo.list_for_employee(
+        employee_hire_history_id=session["user_id"]
+    )
+    own_doc_ids = set()
+    for pt in own_path_tracks:
+        for d in doc_repo.list_for_pathtrack(path_track_id=pt.path_track_id):
+            own_doc_ids.add(d.doc_id)
+    if doc_id not in own_doc_ids:
+        abort(404)
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{title}.pdf"'},
+    )
+
+
+@bp.route("/<int:path_track_id>/delete", methods=["POST"], endpoint="delete")
+@login_required
+def _delete_stub(path_track_id):
+    return "delete not yet implemented", 501
 
 
 @bp.route("", methods=["GET"], endpoint="list_mine")
