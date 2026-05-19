@@ -3,6 +3,16 @@
 {% block content %}
 <h2><i class="bi bi-receipt"></i> Nuova dichiarazione - {{ month_label }} {{ target_month.year }}</h2>
 
+{% if target %}
+<div class="alert alert-warning d-flex align-items-center">
+    <i class="bi bi-person-fill-exclamation me-2 fs-4"></i>
+    <div>
+        Dichiarazione <strong>per conto di {{ target.full_name }}</strong>
+        (FC {{ target.function_code }}).
+    </div>
+</div>
+{% endif %}
+
 <div class="card mb-3">
     <div class="card-body">
         <p class="mb-1"><strong>Punto di partenza:</strong> {{ coord.label }}</p>
@@ -19,6 +29,7 @@
 
 <form method="post" enctype="multipart/form-data" id="pathtrack-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if on_behalf_of %}<input type="hidden" name="on_behalf_of" value="{{ on_behalf_of }}">{% endif %}
 
     <div class="mb-3">
         <label class="form-label">Tipo rimborso</label>

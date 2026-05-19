@@ -7,6 +7,7 @@ from flask import (
 )
 
 from fdp_app.auth.decorators import login_required
+from fdp_app.auth.helpers import resolve_target_employee
 from fdp_app.coordinates.service import (
     ActiveCoordinateAlreadyExists,
     CoordinateService,
@@ -15,6 +16,13 @@ from fdp_app.pathtracks.routing import RoutingError
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 
 bp = Blueprint("coordinates", __name__)
+
+
+def _redirect_to_index():
+    raw_obh = request.args.get("on_behalf_of") or request.form.get("on_behalf_of")
+    if raw_obh:
+        return redirect(url_for("coordinates.index", on_behalf_of=raw_obh))
+    return redirect(url_for("coordinates.index"))
 
 
 def _build_service() -> CoordinateService:
@@ -28,13 +36,16 @@ def _build_service() -> CoordinateService:
 @bp.route("/coordinates", methods=["GET"])
 @login_required
 def index():
+    target_id, in_behalf_of, target = resolve_target_employee(session["user_id"])
     service = _build_service()
-    active = service.find_active(session["user_id"])
+    active = service.find_active(target_id)
     workplace = current_app.config["_workplace"]
     return render_template(
         "coordinates/index.html",
         active=active,
         workplace=workplace,
+        on_behalf_of=in_behalf_of,
+        target=target,
     )
 
 
@@ -46,23 +57,24 @@ def create():
         lon = float(request.form.get("lon") or "")
     except ValueError:
         flash("Coordinate non valide.", "danger")
-        return redirect(url_for("coordinates.index"))
+        return _redirect_to_index()
 
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         flash("Coordinate non valide (lat/lon fuori range).", "danger")
-        return redirect(url_for("coordinates.index"))
+        return _redirect_to_index()
 
     label = (request.form.get("label") or "").strip()
     if not label:
         flash("Etichetta obbligatoria.", "danger")
-        return redirect(url_for("coordinates.index"))
+        return _redirect_to_index()
     if len(label) > 200:
         label = label[:200]
 
+    target_id, _ib, _t = resolve_target_employee(session["user_id"])
     service = _build_service()
     try:
         new_id = service.create(
-            employee_hire_history_id=session["user_id"],
+            employee_hire_history_id=target_id,
             label=label,
             lat=lat,
             lon=lon,
@@ -86,7 +98,7 @@ def create():
             "danger",
         )
 
-    return redirect(url_for("coordinates.index"))
+    return _redirect_to_index()
 
 
 @bp.route("/coordinates/delete", methods=["POST"])
@@ -96,12 +108,13 @@ def delete():
         coordinate_id = int(request.form.get("coordinate_id") or "")
     except ValueError:
         flash("Identificativo punto non valido.", "danger")
-        return redirect(url_for("coordinates.index"))
+        return _redirect_to_index()
 
+    target_id, _ib, _t = resolve_target_employee(session["user_id"])
     service = _build_service()
     ok = service.delete(
         coordinate_id=coordinate_id,
-        employee_hire_history_id=session["user_id"],
+        employee_hire_history_id=target_id,
     )
     if ok:
         current_app.logger.info(
@@ -111,4 +124,4 @@ def delete():
         flash("Punto di partenza cancellato.", "success")
     else:
         flash("Punto non trovato o non posseduto.", "warning")
-    return redirect(url_for("coordinates.index"))
+    return _redirect_to_index()

@@ -7,6 +7,7 @@ from flask import (
 )
 
 from fdp_app.auth.decorators import login_required
+from fdp_app.auth.helpers import resolve_target_employee
 from fdp_app.db import get_request_db
 from fdp_app.pathtracks.deadline import (
     can_create_draft_for,
@@ -97,10 +98,13 @@ def _parse_taxi_amounts():
 @bp.route("/new", methods=["GET"])
 @login_required
 def new():
+    target_id, in_behalf_of, target = resolve_target_employee(session["user_id"])
     coord_repo = CoordinateRepo(current_app.config["_db"])
-    coord = coord_repo.find_active(session["user_id"])
+    coord = coord_repo.find_active(target_id)
     if coord is None:
         flash("Definisci prima il punto di partenza nella mappa.", "warning")
+        if in_behalf_of:
+            return redirect(url_for("coordinates.index", on_behalf_of=in_behalf_of))
         return redirect(url_for("coordinates.index"))
 
     # Mese di riferimento: di default il mese precedente; se siamo nel mese
@@ -126,7 +130,7 @@ def new():
 
     pathtrack_repo = PathTrackRepo(current_app.config["_db"])
     existing = pathtrack_repo.find_active_for_month(
-        employee_hire_history_id=session["user_id"],
+        employee_hire_history_id=target_id,
         date_path_track=target_month,
     )
     if existing is not None:
@@ -144,6 +148,8 @@ def new():
         coord=coord,
         rate=rate,
         can_submit_now=can_submit_now,
+        on_behalf_of=in_behalf_of,
+        target=target,
     )
 
 
@@ -152,10 +158,13 @@ def new():
 @bp.route("/new", methods=["POST"])
 @login_required
 def create():
+    target_id, in_behalf_of, target = resolve_target_employee(session["user_id"])
+
     action = (request.form.get("action") or "draft").strip().lower()
     if action not in ("draft", "submit"):
         flash("Azione non riconosciuta.", "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
 
     target_month = previous_month_first_day()
     from datetime import datetime as _dt
@@ -167,13 +176,15 @@ def create():
     reimbursement_type = (request.form.get("reimbursement_type") or "").strip().upper()
     if reimbursement_type not in ("CARBURANTE", "TAXI"):
         flash("Tipo rimborso non valido.", "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
 
     try:
         number_of_trips = int(request.form.get("number_of_trips") or "")
     except ValueError:
         flash("Numero viaggi non valido.", "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
 
     s = current_app.config["_settings_cls"]
     sheet_bytes, receipt_bytes_list, error = _parse_pdf_uploads(
@@ -181,7 +192,8 @@ def create():
     )
     if error:
         flash(error, "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
 
     service = _build_service()
 
@@ -193,12 +205,14 @@ def create():
                 number_of_trips=number_of_trips,
                 sheet_pdf=sheet_bytes,
                 receipt_pdfs=receipt_bytes_list,
+                in_behalf_of_id=in_behalf_of,
             )
         else:
             taxi_amounts = _parse_taxi_amounts()
             if taxi_amounts is None:
                 flash("Importi ricevute non validi.", "danger")
-                return redirect(url_for("pathtracks.new"))
+                return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                                else url_for("pathtracks.new"))
             new_id = service.create_draft_taxi(
                 employee_hire_history_id=session["user_id"],
                 date_path_track=target_month,
@@ -206,11 +220,12 @@ def create():
                 receipt_amounts=taxi_amounts,
                 sheet_pdf=sheet_bytes,
                 receipt_pdfs=receipt_bytes_list,
+                in_behalf_of_id=in_behalf_of,
             )
 
         current_app.logger.info(
-            "PathTrack DRAFT created: user_id=%s id=%s type=%s",
-            session["user_id"], new_id, reimbursement_type,
+            "PathTrack DRAFT created: user_id=%s id=%s type=%s in_behalf_of=%s",
+            session["user_id"], new_id, reimbursement_type, in_behalf_of,
         )
 
         if action == "submit":
@@ -240,20 +255,24 @@ def create():
         return redirect(url_for("pathtracks.view", path_track_id=new_id))
     except NoActiveCoordinateError:
         flash("Definisci prima il punto di partenza nella mappa.", "warning")
-        return redirect(url_for("coordinates.index"))
+        return redirect(url_for("coordinates.index", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("coordinates.index"))
     except NoRateConfiguredError:
         current_app.logger.error("No rate configured for %s", target_month)
         flash("Rate non configurato per il mese. Contattare l'amministratore.", "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
     except DuplicateDeclarationError:
         flash("Esiste gia' una dichiarazione attiva per il mese.", "warning")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
     except DeadlineClosedError as e:
         flash(str(e), "danger")
         return redirect(url_for("pathtracks.list_mine"))
     except InvalidInputError as e:
         flash(str(e), "danger")
-        return redirect(url_for("pathtracks.new"))
+        return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
+                        else url_for("pathtracks.new"))
 
 
 # ---- GET /<id> view --------------------------------------------------------

@@ -7,6 +7,16 @@
 {% block content %}
 <h2>Punto di partenza</h2>
 
+{% if target %}
+<div class="alert alert-warning d-flex align-items-center">
+    <i class="bi bi-person-fill-exclamation me-2 fs-4"></i>
+    <div>
+        Stai operando <strong>per conto di {{ target.full_name }}</strong>
+        (FC {{ target.function_code }}).
+    </div>
+</div>
+{% endif %}
+
 {% if active %}
 <div class="card mb-3">
     <div class="card-body">
@@ -22,6 +32,7 @@
         {% endif %}
         <form action="{{ url_for('coordinates.delete') }}" method="post" class="mt-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if on_behalf_of %}<input type="hidden" name="on_behalf_of" value="{{ on_behalf_of }}">{% endif %}
             <input type="hidden" name="coordinate_id" value="{{ active.coordinate_id }}">
             <button type="submit" class="btn btn-outline-danger btn-sm"
                     onclick="return confirm('Cancellare il punto di partenza?');">
@@ -42,6 +53,7 @@
 <form id="save-form" action="{{ url_for('coordinates.create') }}" method="post"
       class="card card-body" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if on_behalf_of %}<input type="hidden" name="on_behalf_of" value="{{ on_behalf_of }}">{% endif %}
     <input type="hidden" name="lat" id="input-lat">
     <input type="hidden" name="lon" id="input-lon">
     <div class="mb-2">
