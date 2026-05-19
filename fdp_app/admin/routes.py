@@ -5,6 +5,7 @@ from flask import (
     Blueprint, Response, abort, current_app, render_template, request, session,
 )
 
+from fdp_app.admin.service import build_xlsx
 from fdp_app.auth.decorators import admin_required, login_required
 from fdp_app.repos.employee_repo import EmployeeRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
@@ -58,8 +59,27 @@ def history():
     )
 
 
-@bp.route("/export", methods=["GET"], endpoint="export")
+@bp.route("/export", methods=["GET"])
 @login_required
 @admin_required
-def _export_stub():
-    return "export - not yet implemented", 501
+def export():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    if not year or not month or not (1 <= month <= 12):
+        abort(400)
+    db = current_app.config["_db"]
+    pathtrack_repo = PathTrackRepo(db)
+    rows = pathtrack_repo.list_for_sub_cdc(
+        sub_cdc_id=session["sub_cdc_id"],
+        year=year,
+        month=month,
+    )
+    xlsx_bytes = build_xlsx(
+        rows, year=year, month=month, month_name=_MONTH_NAMES_IT[month],
+    )
+    filename = f"fogli-di-percorso-{year:04d}-{month:02d}.xlsx"
+    return Response(
+        xlsx_bytes,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
