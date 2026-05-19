@@ -341,6 +341,37 @@ Cache in-memory `(lat, lon) -> road_km` di sessione. Il valore viene comunque pe
 ### 7.6 Timezone
 Tutto Europe/Rome lato app. DB usa `GETDATE()` (server time). La verifica scadenza usa `datetime.now(ZoneInfo("Europe/Rome"))`.
 
+### 7.7 Workflow DRAFT / SUBMITTED *(introdotto in Piano 3.1, migration `002_add_status.sql`)*
+
+Ogni record di `fdp.PathTracks` ha un campo `Status CHAR(10) NOT NULL DEFAULT 'DRAFT'` con due valori:
+
+| Stato | Significato | RegistryId | SubmittedOn |
+|---|---|---|---|
+| `DRAFT` | Bozza modificabile dall'utente | NULL | NULL |
+| `SUBMITTED` | Dichiarazione confermata e inviata | valorizzato (SP `Registro`) | `GETDATE()` al submit |
+
+**Regole di transizione di stato:**
+
+| Azione | Pre-condizione | Effetto |
+|---|---|---|
+| Creazione bozza | `can_create_draft_for(date_path_track)` | INSERT con `Status='DRAFT'`, `RegistryId=NULL`, niente SP |
+| Modifica bozza | record `Status='DRAFT'` + ownership + `can_create_draft_for` | UPDATE soft-delete vecchi documenti + INSERT nuovi |
+| Cancellazione bozza | record `Status='DRAFT'` (enforced anche a livello SQL nel WHERE del soft delete) | `DateOut = GETDATE()` |
+| Submit (invio) | record `Status='DRAFT'` + `can_submit_for` (1-5 del mese successivo) | Chiama SP `Registro`, set `Status='SUBMITTED'`, `SubmittedOn=GETDATE()`, `RegistryId=?` |
+| Dopo Submit | — | Record immutabile dall'utente. `ReceivedOn` resterà NULL (valorizzato da sistema esterno) |
+
+**Finestre temporali (Europe/Rome):**
+
+- `can_create_draft_for(date_path_track)`:
+  - Mese corrente: sempre
+  - Mese precedente: solo fino al giorno 5 alle 23:59:59 del mese corrente
+  - Altri mesi (futuri o più vecchi): negato
+- `can_submit_for(date_path_track)`: alias di `is_open_for_month` — dal 1 al 5 del mese successivo a `date_path_track`
+
+**Bozza scaduta**: una bozza non inviata entro il 5 resta `DRAFT` ma non più modificabile né submittabile dall'utente (i predicati `can_*_for` ritornano False). L'admin potrà sbloccarla/inviarla manualmente in Piano 4.
+
+**Retro-compatibilità**: i record esistenti con `RegistryId` valorizzato sono stati migrati a `Status='SUBMITTED'` con `SubmittedOn=COALESCE(SubmittedOn, DateSys)`.
+
 ## 8. Reminder e scheduler
 
 ### 8.1 Comando CLI
