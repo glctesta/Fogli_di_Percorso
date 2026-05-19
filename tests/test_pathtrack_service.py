@@ -260,3 +260,61 @@ def test_submit_rolls_back_on_sp_failure():
 
     conn.rollback.assert_called_once()
     conn.commit.assert_not_called()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_submit_with_force_bypasses_deadline_check():
+    """Admin override: force=True submits anche fuori finestra."""
+    svc, repos, conn = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 900
+    repos["pathtrack"].mark_as_submitted.return_value = True
+
+    # Senza force fallirebbe (siamo fuori finestra), con force=True passa
+    registry_id = svc.submit(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        full_name="Rossi Mario",
+        force=True,
+    )
+
+    assert registry_id == 900
+    repos["registry"].generate.assert_called_once()
+    repos["pathtrack"].mark_as_submitted.assert_called_once()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_submit_with_force_still_validates_draft_status():
+    """Force bypassa solo deadline, NON lo stato DRAFT."""
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="SUBMITTED", date_path_track=date(2026, 4, 1),
+    )
+
+    with pytest.raises(NotADraftError):
+        svc.submit(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            full_name="x",
+            force=True,
+        )
+
+    repos["registry"].generate.assert_not_called()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_submit_default_force_false_still_rejects_outside_window():
+    """Per non-admin (force=False default) la scadenza vale ancora."""
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+
+    with pytest.raises(DeadlineClosedError):
+        svc.submit(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            full_name="x",
+        )

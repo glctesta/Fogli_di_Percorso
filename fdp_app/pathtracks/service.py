@@ -431,11 +431,16 @@ class PathTrackService:
         path_track_id: int,
         employee_hire_history_id: int,
         full_name: str,
+        force: bool = False,
     ) -> int:
         """Invia (conferma) una bozza. Chiama SP Registro e marca SUBMITTED.
 
+        Args:
+            force: se True, salta il check `can_submit_for` (uso admin per
+                   inviare bozze scadute oltre il 5 del mese successivo).
+                   Il check di stato DRAFT e ownership rimangono attivi.
+
         Ritorna il RegistryId assegnato.
-        Raises NotADraftError, DeadlineClosedError.
         """
         row = self._pathtrack_repo.find_by_id(
             path_track_id=path_track_id,
@@ -445,7 +450,7 @@ class PathTrackService:
             raise NotADraftError("Dichiarazione non trovata o non posseduta")
         if row.status != "DRAFT":
             raise NotADraftError("Dichiarazione gia' inviata o cancellata")
-        if not can_submit_for(row.date_path_track):
+        if not force and not can_submit_for(row.date_path_track):
             raise DeadlineClosedError(
                 f"Finestra di invio chiusa per {row.date_path_track:%Y-%m} "
                 "(submit consentito solo dal 1 al 5 del mese successivo)"

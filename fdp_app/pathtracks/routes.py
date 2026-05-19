@@ -378,19 +378,27 @@ def update(path_track_id: int):
 @bp.route("/<int:path_track_id>/submit", methods=["POST"])
 @login_required
 def submit(path_track_id: int):
+    # Force-submit allowed only when user is admin (FC > 60).
+    requested_force = (request.form.get("force") == "1")
+    is_admin = (session.get("function_code", 0) > 60)
+    force = requested_force and is_admin
+
     service = _build_service()
     try:
         registry_id = service.submit(
             path_track_id=path_track_id,
             employee_hire_history_id=session["user_id"],
             full_name=session["full_name"],
+            force=force,
         )
+        action_log = "SUBMITTED (admin override)" if force else "SUBMITTED"
         current_app.logger.info(
-            "PathTrack SUBMITTED: user_id=%s id=%s registry_id=%s",
-            session["user_id"], path_track_id, registry_id,
+            "PathTrack %s: user_id=%s id=%s registry_id=%s",
+            action_log, session["user_id"], path_track_id, registry_id,
         )
         flash(
-            f"Dichiarazione inviata con successo. RegistryId: {registry_id}",
+            f"Dichiarazione inviata con successo. RegistryId: {registry_id}"
+            + (" (override admin)" if force else ""),
             "success",
         )
     except NotADraftError as e:

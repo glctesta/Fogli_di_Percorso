@@ -130,6 +130,17 @@
         <i class="bi bi-send-check"></i> Conferma e invia
         <small>(dal 1 al 5 del mese successivo)</small>
     </button>
+    {% if row.status == "DRAFT" and (session.function_code or 0) > 60 %}
+    <form method="post" action="{{ url_for('pathtracks.submit', path_track_id=row.path_track_id) }}"
+          class="d-inline ms-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="force" value="1">
+        <button type="submit" class="btn btn-warning"
+                onclick="return confirm('Invio admin in override scadenza. Confermi?');">
+            <i class="bi bi-shield-check"></i> Invia (override admin)
+        </button>
+    </form>
+    {% endif %}
     {% endif %}
 
     <form method="post" action="{{ url_for('pathtracks.delete', path_track_id=row.path_track_id) }}"

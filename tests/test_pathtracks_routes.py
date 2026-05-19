@@ -396,3 +396,58 @@ def test_list_shows_user_declarations_with_status(
     assert response.status_code == 200
     assert b"BOZZA" in response.data
     assert b"INVIATA" in response.data
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_post_submit_with_force_by_admin_bypasses_deadline(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo,
+    mock_doc_repo, mock_registry_repo,
+):
+    _login(client, eh_id=10)
+    # Set FC>60 to enable admin override
+    with client.session_transaction() as sess:
+        sess["function_code"] = 70
+    mock_pathtrack_repo.find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1), path_track_id=100,
+    )
+    mock_registry_repo.generate.return_value = 901
+    mock_pathtrack_repo.mark_as_submitted.return_value = True
+
+    with patch("fdp_app.pathtracks.routes.get_request_db") as mock_get_db:
+        conn = MagicMock()
+        conn.autocommit = True
+        mock_get_db.return_value = conn
+
+        response = client.post(
+            "/pathtracks/100/submit",
+            data={"force": "1"},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 302
+    mock_registry_repo.generate.assert_called_once()
+    mock_pathtrack_repo.mark_as_submitted.assert_called_once()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_post_submit_with_force_by_non_admin_still_blocked(
+    client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo,
+    mock_doc_repo, mock_registry_repo,
+):
+    """Non-admin (FC<=60) cannot use force=1 to bypass the deadline."""
+    _login(client, eh_id=10)
+    with client.session_transaction() as sess:
+        sess["function_code"] = 50  # non admin
+    mock_pathtrack_repo.find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1), path_track_id=100,
+    )
+
+    response = client.post(
+        "/pathtracks/100/submit",
+        data={"force": "1"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    mock_registry_repo.generate.assert_not_called()
+    mock_pathtrack_repo.mark_as_submitted.assert_not_called()
