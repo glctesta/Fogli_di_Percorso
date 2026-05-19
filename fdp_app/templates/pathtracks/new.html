@@ -1,16 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Dichiarazione mensile - Fogli di Percorso{% endblock %}
+{% block title %}Nuova dichiarazione - Fogli di Percorso{% endblock %}
 {% block content %}
-<h2>Dichiarazione mensile - {{ month_label }} {{ target_month.year }}</h2>
+<h2><i class="bi bi-receipt"></i> Nuova dichiarazione - {{ month_label }} {{ target_month.year }}</h2>
 
 <div class="card mb-3">
     <div class="card-body">
-        <p><strong>Punto di partenza:</strong> {{ coord.label }}</p>
-        <p><strong>Distanza stradale (one-way):</strong>
+        <p class="mb-1"><strong>Punto di partenza:</strong> {{ coord.label }}</p>
+        <p class="mb-1"><strong>Distanza one-way:</strong>
            {{ "%.3f"|format(coord.road_km_to_workplace) }} km</p>
         {% if rate %}
-        <p><strong>Rate corrente:</strong>
-           {{ rate.avg_consumption_km_l }} km/l - €{{ rate.avg_fuel_price_eur_l }}/l</p>
+        <p class="mb-0"><strong>Rate corrente:</strong>
+           {{ rate.avg_consumption_km_l }} km/l - € {{ rate.avg_fuel_price_eur_l }}/l</p>
+        {% else %}
+        <div class="alert alert-warning mb-0">Nessun rate configurato per il mese.</div>
         {% endif %}
     </div>
 </div>
@@ -61,12 +63,28 @@
                name="receipt_pdf" accept="application/pdf" multiple required>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-4">
         <strong>Anteprima rimborso:</strong>
         <span id="amount-preview" class="amount-preview">€ -</span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Salva dichiarazione</button>
+    <button type="submit" name="action" value="draft" class="btn btn-outline-primary">
+        <i class="bi bi-save"></i> Salva bozza
+    </button>
+
+    {% if can_submit_now %}
+    <button type="submit" name="action" value="submit" class="btn btn-primary"
+            onclick="return confirm('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.');">
+        <i class="bi bi-send-check"></i> Salva e invia
+    </button>
+    {% else %}
+    <button type="button" class="btn btn-primary" disabled
+            title="L'invio sara' possibile solo dal 1 al 5 del mese successivo.">
+        <i class="bi bi-send-check"></i> Salva e invia
+        <small>(disponibile dal 1 al 5 del mese successivo)</small>
+    </button>
+    {% endif %}
+
     <a href="{{ url_for('dashboard.index') }}" class="btn btn-link">Annulla</a>
 </form>
 

@@ -1,19 +1,25 @@
-"""Route per la dichiarazione mensile."""
+"""Route per la dichiarazione mensile (workflow DRAFT/SUBMITTED)."""
 from __future__ import annotations
 
 from flask import (
-    Blueprint, current_app, flash, redirect, render_template, request,
-    session, url_for,
+    Blueprint, abort, current_app, flash, redirect, render_template, request,
+    session, url_for, Response,
 )
 
 from fdp_app.auth.decorators import login_required
 from fdp_app.db import get_request_db
-from fdp_app.pathtracks.deadline import is_open_for_month, previous_month_first_day
+from fdp_app.pathtracks.deadline import (
+    can_create_draft_for,
+    can_submit_for,
+    previous_month_first_day,
+)
 from fdp_app.pathtracks.service import (
+    DeadlineClosedError,
     DuplicateDeclarationError,
     InvalidInputError,
     NoActiveCoordinateError,
     NoRateConfiguredError,
+    NotADraftError,
     PathTrackService,
 )
 from fdp_app.repos.coordinate_repo import CoordinateRepo
@@ -42,26 +48,81 @@ def _build_service() -> PathTrackService:
     )
 
 
+def _parse_pdf_uploads(max_bytes, max_files):
+    """Estrae sheet_pdf (bytes) e receipt_pdfs (lista bytes) dal form,
+    fa size check + magic bytes. Ritorna (sheet_bytes, receipts_list) o
+    solleva un dict-like errore via flash + redirect (caller deve poi return).
+
+    Convenzione: ritorna (None, None, error_message) in caso di errore.
+    """
+    sheet_file = request.files.get("sheet_pdf")
+    receipt_files = request.files.getlist("receipt_pdf")
+
+    if not sheet_file or not sheet_file.filename:
+        return None, None, "Foglio di percorso (PDF) obbligatorio."
+    sheet_bytes = sheet_file.read()
+    if len(sheet_bytes) > max_bytes:
+        return None, None, "Foglio di percorso troppo grande (max 5 MB)."
+    if not sheet_bytes.startswith(b"%PDF-"):
+        return None, None, "Il foglio di percorso non e' un PDF valido."
+
+    receipts = []
+    for f in receipt_files:
+        if f and f.filename:
+            data = f.read()
+            if len(data) > max_bytes:
+                return None, None, f"Ricevuta '{f.filename}' troppo grande (max 5 MB)."
+            receipts.append(data)
+
+    if not receipts:
+        return None, None, "Almeno una ricevuta (PDF) obbligatoria."
+
+    if len(receipts) + 1 > max_files:
+        return None, None, f"Troppi file caricati (max {max_files})."
+
+    return sheet_bytes, receipts, None
+
+
+def _parse_taxi_amounts():
+    raw = request.form.getlist("taxi_amount")
+    try:
+        amounts = [float(a) for a in raw if a and a.strip()]
+    except ValueError:
+        return None
+    return amounts
+
+
+# ---- GET / new -------------------------------------------------------------
+
 @bp.route("/new", methods=["GET"])
 @login_required
 def new():
     coord_repo = CoordinateRepo(current_app.config["_db"])
     coord = coord_repo.find_active(session["user_id"])
     if coord is None:
-        flash(
-            "Definisci prima il punto di partenza nella mappa.",
-            "warning",
-        )
+        flash("Definisci prima il punto di partenza nella mappa.", "warning")
         return redirect(url_for("coordinates.index"))
 
+    # Mese di riferimento: di default il mese precedente; se siamo nel mese
+    # corrente e l'utente puo' iniziare a lavorare in anticipo, mostriamo
+    # anche un selettore (per ora MVP: solo mese precedente, fallback corrente)
     target_month = previous_month_first_day()
-    if not is_open_for_month(target_month):
+    # Se siamo nel mese 1-5 del successivo, target=previous (default).
+    # Altrimenti, target=current month
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _Z
+    today = _dt.now(_Z("Europe/Rome")).date()
+    if not can_create_draft_for(target_month):
+        # Il mese precedente non e' piu' modificabile, usiamo il corrente
+        target_month = today.replace(day=1)
+
+    if not can_create_draft_for(target_month):
         flash(
-            f"Il periodo di inserimento per {_MONTH_NAMES_IT[target_month.month]} "
-            f"{target_month.year} e' chiuso (scadenza superata).",
+            f"Periodo di inserimento per {_MONTH_NAMES_IT[target_month.month]} "
+            f"{target_month.year} non aperto.",
             "danger",
         )
-        return redirect(url_for("dashboard.index"))
+        return redirect(url_for("pathtracks.list_mine"))
 
     pathtrack_repo = PathTrackRepo(current_app.config["_db"])
     existing = pathtrack_repo.find_active_for_month(
@@ -74,22 +135,34 @@ def new():
     rate_repo = RateRepo(current_app.config["_db"])
     rate = rate_repo.find_for_date(target_month)
 
+    can_submit_now = can_submit_for(target_month)
+
     return render_template(
         "pathtracks/new.html",
         target_month=target_month,
         month_label=_MONTH_NAMES_IT[target_month.month],
         coord=coord,
         rate=rate,
+        can_submit_now=can_submit_now,
     )
 
+
+# ---- POST / new (create draft, maybe submit) ------------------------------
 
 @bp.route("/new", methods=["POST"])
 @login_required
 def create():
+    action = (request.form.get("action") or "draft").strip().lower()
+    if action not in ("draft", "submit"):
+        flash("Azione non riconosciuta.", "danger")
+        return redirect(url_for("pathtracks.new"))
+
     target_month = previous_month_first_day()
-    if not is_open_for_month(target_month):
-        flash("Periodo di inserimento chiuso.", "danger")
-        return redirect(url_for("dashboard.index"))
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _Z
+    today = _dt.now(_Z("Europe/Rome")).date()
+    if not can_create_draft_for(target_month):
+        target_month = today.replace(day=1)
 
     reimbursement_type = (request.form.get("reimbursement_type") or "").strip().upper()
     if reimbursement_type not in ("CARBURANTE", "TAXI"):
@@ -102,62 +175,32 @@ def create():
         flash("Numero viaggi non valido.", "danger")
         return redirect(url_for("pathtracks.new"))
 
-    sheet_file = request.files.get("sheet_pdf")
-    receipt_files = request.files.getlist("receipt_pdf")
-
-    max_bytes = current_app.config["_settings_cls"].UPLOAD_MAX_BYTES
-    max_files = current_app.config["_settings_cls"].UPLOAD_MAX_FILES_PER_PATHTRACK
-
-    if not sheet_file or not sheet_file.filename:
-        flash("Foglio di percorso (PDF) obbligatorio.", "danger")
-        return redirect(url_for("pathtracks.new"))
-    sheet_bytes = sheet_file.read()
-    if len(sheet_bytes) > max_bytes:
-        flash("Foglio di percorso troppo grande (max 5 MB).", "danger")
-        return redirect(url_for("pathtracks.new"))
-    if not sheet_bytes.startswith(b"%PDF-"):
-        flash("Il foglio di percorso non e' un PDF valido.", "danger")
-        return redirect(url_for("pathtracks.new"))
-
-    receipt_bytes_list = []
-    for f in receipt_files:
-        if f and f.filename:
-            data = f.read()
-            if len(data) > max_bytes:
-                flash(f"Ricevuta '{f.filename}' troppo grande (max 5 MB).", "danger")
-                return redirect(url_for("pathtracks.new"))
-            receipt_bytes_list.append(data)
-
-    if not receipt_bytes_list:
-        flash("Almeno una ricevuta (PDF) obbligatoria.", "danger")
-        return redirect(url_for("pathtracks.new"))
-
-    if len(receipt_bytes_list) + 1 > max_files:
-        flash(f"Troppi file caricati (max {max_files}).", "danger")
+    s = current_app.config["_settings_cls"]
+    sheet_bytes, receipt_bytes_list, error = _parse_pdf_uploads(
+        s.UPLOAD_MAX_BYTES, s.UPLOAD_MAX_FILES_PER_PATHTRACK
+    )
+    if error:
+        flash(error, "danger")
         return redirect(url_for("pathtracks.new"))
 
     service = _build_service()
 
     try:
         if reimbursement_type == "CARBURANTE":
-            new_id = service.create_fuel(
+            new_id = service.create_draft_fuel(
                 employee_hire_history_id=session["user_id"],
-                full_name=session["full_name"],
                 date_path_track=target_month,
                 number_of_trips=number_of_trips,
                 sheet_pdf=sheet_bytes,
                 receipt_pdfs=receipt_bytes_list,
             )
         else:
-            taxi_amounts_raw = request.form.getlist("taxi_amount")
-            try:
-                taxi_amounts = [float(a) for a in taxi_amounts_raw if a.strip()]
-            except ValueError:
+            taxi_amounts = _parse_taxi_amounts()
+            if taxi_amounts is None:
                 flash("Importi ricevute non validi.", "danger")
                 return redirect(url_for("pathtracks.new"))
-            new_id = service.create_taxi(
+            new_id = service.create_draft_taxi(
                 employee_hire_history_id=session["user_id"],
-                full_name=session["full_name"],
                 date_path_track=target_month,
                 number_of_trips=number_of_trips,
                 receipt_amounts=taxi_amounts,
@@ -166,10 +209,34 @@ def create():
             )
 
         current_app.logger.info(
-            "PathTrack created: user_id=%s id=%s type=%s",
+            "PathTrack DRAFT created: user_id=%s id=%s type=%s",
             session["user_id"], new_id, reimbursement_type,
         )
-        flash("Dichiarazione mensile salvata.", "success")
+
+        if action == "submit":
+            try:
+                registry_id = service.submit(
+                    path_track_id=new_id,
+                    employee_hire_history_id=session["user_id"],
+                    full_name=session["full_name"],
+                )
+                current_app.logger.info(
+                    "PathTrack SUBMITTED: user_id=%s id=%s registry_id=%s",
+                    session["user_id"], new_id, registry_id,
+                )
+                flash(
+                    f"Dichiarazione inviata con successo. RegistryId: {registry_id}",
+                    "success",
+                )
+            except DeadlineClosedError as e:
+                flash(
+                    f"Bozza salvata ma non inviata: {e}. Potrai inviarla dal 1 al 5 "
+                    "del mese successivo.",
+                    "warning",
+                )
+        else:
+            flash("Bozza salvata. La potrai aggiornare fino al 5 del mese successivo.", "success")
+
         return redirect(url_for("pathtracks.view", path_track_id=new_id))
     except NoActiveCoordinateError:
         flash("Definisci prima il punto di partenza nella mappa.", "warning")
@@ -181,15 +248,19 @@ def create():
     except DuplicateDeclarationError:
         flash("Esiste gia' una dichiarazione attiva per il mese.", "warning")
         return redirect(url_for("pathtracks.new"))
+    except DeadlineClosedError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("pathtracks.list_mine"))
     except InvalidInputError as e:
         flash(str(e), "danger")
         return redirect(url_for("pathtracks.new"))
 
 
+# ---- GET /<id> view --------------------------------------------------------
+
 @bp.route("/<int:path_track_id>", methods=["GET"])
 @login_required
 def view(path_track_id: int):
-    from flask import abort
     pathtrack_repo = PathTrackRepo(current_app.config["_db"])
     row = pathtrack_repo.find_by_id(
         path_track_id=path_track_id,
@@ -200,28 +271,177 @@ def view(path_track_id: int):
     doc_repo = PathTrackDocRepo(current_app.config["_db"])
     docs = doc_repo.list_for_pathtrack(path_track_id=path_track_id)
 
-    target_month = row.date_path_track
-    can_edit = is_open_for_month(target_month)
+    rate = None
+    if row.status == "DRAFT":
+        rate_repo = RateRepo(current_app.config["_db"])
+        rate = rate_repo.find_for_date(row.date_path_track)
+
+    can_edit = (row.status == "DRAFT") and can_create_draft_for(row.date_path_track)
+    can_submit = (row.status == "DRAFT") and can_submit_for(row.date_path_track)
+
     return render_template(
         "pathtracks/view.html",
         row=row,
         docs=docs,
-        month_label=_MONTH_NAMES_IT[target_month.month],
+        rate=rate,
+        month_label=_MONTH_NAMES_IT[row.date_path_track.month],
         can_edit=can_edit,
+        can_submit=can_submit,
     )
 
+
+# ---- POST /<id>/update -----------------------------------------------------
+
+@bp.route("/<int:path_track_id>/update", methods=["POST"])
+@login_required
+def update(path_track_id: int):
+    try:
+        number_of_trips = int(request.form.get("number_of_trips") or "")
+    except ValueError:
+        flash("Numero viaggi non valido.", "danger")
+        return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+    reimbursement_type = (request.form.get("reimbursement_type") or "").strip().upper()
+
+    s = current_app.config["_settings_cls"]
+    sheet_bytes, receipt_bytes_list, error = _parse_pdf_uploads(
+        s.UPLOAD_MAX_BYTES, s.UPLOAD_MAX_FILES_PER_PATHTRACK
+    )
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+    service = _build_service()
+
+    try:
+        if reimbursement_type == "CARBURANTE":
+            service.update_draft_fuel(
+                path_track_id=path_track_id,
+                employee_hire_history_id=session["user_id"],
+                number_of_trips=number_of_trips,
+                sheet_pdf=sheet_bytes,
+                receipt_pdfs=receipt_bytes_list,
+            )
+        elif reimbursement_type == "TAXI":
+            taxi_amounts = _parse_taxi_amounts()
+            if taxi_amounts is None:
+                flash("Importi ricevute non validi.", "danger")
+                return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+            service.update_draft_taxi(
+                path_track_id=path_track_id,
+                employee_hire_history_id=session["user_id"],
+                number_of_trips=number_of_trips,
+                receipt_amounts=taxi_amounts,
+                sheet_pdf=sheet_bytes,
+                receipt_pdfs=receipt_bytes_list,
+            )
+        else:
+            flash("Tipo rimborso non valido.", "danger")
+            return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+        current_app.logger.info(
+            "PathTrack DRAFT updated: user_id=%s id=%s",
+            session["user_id"], path_track_id,
+        )
+        flash("Bozza aggiornata.", "success")
+    except NotADraftError as e:
+        flash(str(e), "warning")
+    except DeadlineClosedError as e:
+        flash(str(e), "danger")
+    except (NoActiveCoordinateError, NoRateConfiguredError, InvalidInputError) as e:
+        flash(str(e), "danger")
+
+    return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+
+# ---- POST /<id>/submit -----------------------------------------------------
+
+@bp.route("/<int:path_track_id>/submit", methods=["POST"])
+@login_required
+def submit(path_track_id: int):
+    service = _build_service()
+    try:
+        registry_id = service.submit(
+            path_track_id=path_track_id,
+            employee_hire_history_id=session["user_id"],
+            full_name=session["full_name"],
+        )
+        current_app.logger.info(
+            "PathTrack SUBMITTED: user_id=%s id=%s registry_id=%s",
+            session["user_id"], path_track_id, registry_id,
+        )
+        flash(
+            f"Dichiarazione inviata con successo. RegistryId: {registry_id}",
+            "success",
+        )
+    except NotADraftError as e:
+        flash(str(e), "warning")
+    except DeadlineClosedError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+
+# ---- POST /<id>/delete -----------------------------------------------------
+
+@bp.route("/<int:path_track_id>/delete", methods=["POST"])
+@login_required
+def delete(path_track_id: int):
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    row = pathtrack_repo.find_by_id(
+        path_track_id=path_track_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if row is None:
+        abort(404)
+
+    if row.status != "DRAFT":
+        flash("Solo le bozze possono essere cancellate.", "warning")
+        return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
+
+    ok = pathtrack_repo.soft_delete(
+        path_track_id=path_track_id,
+        employee_hire_history_id=session["user_id"],
+    )
+    if ok:
+        doc_repo = PathTrackDocRepo(current_app.config["_db"])
+        doc_repo.soft_delete_all_for_pathtrack(path_track_id=path_track_id)
+        current_app.logger.info(
+            "PathTrack DRAFT deleted: user_id=%s id=%s",
+            session["user_id"], path_track_id,
+        )
+        flash("Bozza cancellata.", "success")
+    else:
+        flash("Impossibile cancellare (non e' una bozza o gia' cancellata).", "warning")
+    return redirect(url_for("pathtracks.list_mine"))
+
+
+# ---- GET / list ------------------------------------------------------------
+
+@bp.route("", methods=["GET"])
+@login_required
+def list_mine():
+    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
+    rows = pathtrack_repo.list_for_employee(
+        employee_hire_history_id=session["user_id"],
+    )
+    return render_template(
+        "pathtracks/list.html",
+        rows=rows,
+        month_names=_MONTH_NAMES_IT,
+    )
+
+
+# ---- GET /docs/<id>/download -----------------------------------------------
 
 @bp.route("/docs/<int:doc_id>/download", methods=["GET"])
 @login_required
 def download_doc(doc_id: int):
-    from flask import abort, Response
     doc_repo = PathTrackDocRepo(current_app.config["_db"])
     pathtrack_repo = PathTrackRepo(current_app.config["_db"])
     try:
         pdf_bytes, title = doc_repo.get_blob(doc_id=doc_id)
     except FileNotFoundError:
         abort(404)
-    # Ownership check (O(n*m); ottimizzazione in Piano 4)
     own_path_tracks = pathtrack_repo.list_for_employee(
         employee_hire_history_id=session["user_id"]
     )
@@ -235,50 +455,4 @@ def download_doc(doc_id: int):
         pdf_bytes,
         mimetype="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{title}.pdf"'},
-    )
-
-
-@bp.route("/<int:path_track_id>/delete", methods=["POST"])
-@login_required
-def delete(path_track_id: int):
-    from flask import abort
-    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
-    row = pathtrack_repo.find_by_id(
-        path_track_id=path_track_id,
-        employee_hire_history_id=session["user_id"],
-    )
-    if row is None:
-        abort(404)
-
-    if not is_open_for_month(row.date_path_track):
-        flash("Periodo di modifica chiuso. Cancellazione non consentita.", "danger")
-        return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
-
-    ok = pathtrack_repo.soft_delete(
-        path_track_id=path_track_id,
-        employee_hire_history_id=session["user_id"],
-    )
-    if ok:
-        doc_repo = PathTrackDocRepo(current_app.config["_db"])
-        doc_repo.soft_delete_all_for_pathtrack(path_track_id=path_track_id)
-        current_app.logger.info(
-            "PathTrack deleted: user_id=%s id=%s", session["user_id"], path_track_id
-        )
-        flash("Dichiarazione cancellata.", "success")
-    else:
-        flash("Impossibile cancellare (record non trovato o gia' cancellato).", "warning")
-    return redirect(url_for("pathtracks.list_mine"))
-
-
-@bp.route("", methods=["GET"])
-@login_required
-def list_mine():
-    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
-    rows = pathtrack_repo.list_for_employee(
-        employee_hire_history_id=session["user_id"],
-    )
-    return render_template(
-        "pathtracks/list.html",
-        rows=rows,
-        month_names=_MONTH_NAMES_IT,
     )
