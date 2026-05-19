@@ -50,3 +50,9 @@ class Settings:
     # Upload PDF
     UPLOAD_MAX_BYTES: int = 5 * 1024 * 1024
     UPLOAD_MAX_FILES_PER_PATHTRACK: int = 20
+
+    # Flask MAX_CONTENT_LENGTH: rifiuta richieste piu' grandi PRIMA di leggere i file
+    # (max_files + 1) * max_bytes per il sheet + tutte le ricevute
+    MAX_CONTENT_LENGTH: int = (
+        UPLOAD_MAX_BYTES * (UPLOAD_MAX_FILES_PER_PATHTRACK + 1)
+    )
