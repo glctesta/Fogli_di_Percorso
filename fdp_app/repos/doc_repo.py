@@ -37,6 +37,17 @@ WHERE PathTrackDocId = ?
 """
 
 
+_QUERY_FIND_OWNER = """
+SELECT pt.EmployeeHireHistoryId,
+       COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId) AS BeneficiaryId
+FROM Employee.fdp.PathTrackDocs d
+JOIN Employee.fdp.PathTracks pt ON pt.PathTrackId = d.PathTrackId
+WHERE d.PathTrackDocId = ?
+  AND d.DateOut IS NULL
+  AND pt.DateOut IS NULL
+"""
+
+
 @dataclass(frozen=True)
 class PathTrackDocRow:
     doc_id: int
@@ -81,3 +92,19 @@ class PathTrackDocRepo(BaseRepo):
             return bytes(row[0]), str(row[1])
         finally:
             cursor.close()
+
+    def find_owner_employee_for_doc(self, *, doc_id: int):
+        """Returns (employee_hire_history_id, beneficiary_id) tuple, or None.
+
+        - employee_hire_history_id: chi ha inserito (uploader)
+        - beneficiary_id: chi e' il beneficiario (uploader o rappresentato)
+        """
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_FIND_OWNER, doc_id)
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
+        if row is None:
+            return None
+        return (int(row[0]), int(row[1]))

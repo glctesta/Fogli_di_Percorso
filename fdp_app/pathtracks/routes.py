@@ -437,20 +437,19 @@ def list_mine():
 @login_required
 def download_doc(doc_id: int):
     doc_repo = PathTrackDocRepo(current_app.config["_db"])
-    pathtrack_repo = PathTrackRepo(current_app.config["_db"])
     try:
         pdf_bytes, title = doc_repo.get_blob(doc_id=doc_id)
     except FileNotFoundError:
         abort(404)
-    own_path_tracks = pathtrack_repo.list_for_employee(
-        employee_hire_history_id=session["user_id"]
-    )
-    own_doc_ids = set()
-    for pt in own_path_tracks:
-        for d in doc_repo.list_for_pathtrack(path_track_id=pt.path_track_id):
-            own_doc_ids.add(d.doc_id)
-    if doc_id not in own_doc_ids:
+
+    # Ownership check via single SQL JOIN
+    owner = doc_repo.find_owner_employee_for_doc(doc_id=doc_id)
+    if owner is None:
         abort(404)
+    employee_id, beneficiary_id = owner
+    if session["user_id"] not in (employee_id, beneficiary_id):
+        abort(404)
+
     return Response(
         pdf_bytes,
         mimetype="application/pdf",
