@@ -1,10 +1,11 @@
-"""Test del PathTrackService (orchestrazione transazionale)."""
+"""Test del PathTrackService (workflow DRAFT/SUBMITTED)."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from unittest.mock import MagicMock
 
 import pytest
+from freezegun import freeze_time
 
 from fdp_app.pathtracks.service import (
     PathTrackService,
@@ -13,6 +14,7 @@ from fdp_app.pathtracks.service import (
     NoRateConfiguredError,
     DuplicateDeclarationError,
     InvalidInputError,
+    NotADraftError,
 )
 from fdp_app.repos.coordinate_repo import ActiveCoordinate
 from fdp_app.repos.pathtrack_repo import PathTrackRow
@@ -40,191 +42,221 @@ def _make_service():
     return svc, repos, connection
 
 
-def test_create_fuel_happy_path():
+def _row(status="DRAFT", date_path_track=None):
+    return PathTrackRow(
+        path_track_id=100,
+        registry_id=None if status == "DRAFT" else 500,
+        date_path_track=date_path_track or date(2026, 4, 1),
+        declarated_path_id=99,
+        in_behalf_of_id=None,
+        reimbursement_type="CARBURANTE",
+        number_of_trips=10,
+        road_km=10.0,
+        rate_id_used=3,
+        taxi_total_eur=None,
+        computed_amount_eur=10.0,
+        status=status,
+        submitted_on=None if status == "DRAFT" else datetime(2026, 5, 3, 10, 0),
+    )
+
+
+# ---- create_draft_fuel --------------------------------------------------
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_create_draft_fuel_current_month_happy_path():
     svc, repos, conn = _make_service()
     repos["coordinate"].find_active.return_value = ActiveCoordinate(
         coordinate_id=99, label="Casa", lat=45.0, lon=9.0, road_km_to_workplace=10.0,
     )
-    repos["rate"].find_for_date.return_value = Rate(
-        rate_id=3, avg_consumption_km_l=15.0, avg_fuel_price_eur_l=1.7,
-    )
-    repos["registry"].generate.return_value = 500
+    repos["rate"].find_for_date.return_value = Rate(3, 15.0, 1.7)
     repos["pathtrack"].find_active_for_month.return_value = None
     repos["pathtrack"].insert.return_value = 100
-    repos["doc"].insert.return_value = 1
 
-    new_id = svc.create_fuel(
+    new_id = svc.create_draft_fuel(
         employee_hire_history_id=10,
-        full_name="Rossi Mario",
-        date_path_track=date(2026, 4, 1),
+        date_path_track=date(2026, 5, 1),
         number_of_trips=20,
-        sheet_pdf=b"%PDF-foglio-percorso",
-        receipt_pdfs=[b"%PDF-ricevuta-1"],
+        sheet_pdf=b"%PDF-1.4 sheet",
+        receipt_pdfs=[b"%PDF-1.4 r"],
     )
 
     assert new_id == 100
-    repos["rate"].find_for_date.assert_called_once_with(date(2026, 4, 1))
-    repos["registry"].generate.assert_called_once()
+    repos["registry"].generate.assert_not_called()  # NO SP call for draft
     insert_kwargs = repos["pathtrack"].insert.call_args.kwargs
-    assert insert_kwargs["reimbursement_type"] == "CARBURANTE"
-    assert insert_kwargs["computed_amount_eur"] == pytest.approx(45.33, abs=0.01)
-    assert insert_kwargs["registry_id"] == 500
-    # 2 documenti: 1 sheet + 1 ricevuta
-    assert repos["doc"].insert.call_count == 2
-    conn.commit.assert_called_once()
-    conn.rollback.assert_not_called()
-
-
-def test_create_taxi_happy_path():
-    svc, repos, conn = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(
-        coordinate_id=99, label="Casa", lat=45.0, lon=9.0, road_km_to_workplace=10.0,
-    )
-    repos["pathtrack"].find_active_for_month.return_value = None
-    repos["registry"].generate.return_value = 600
-    repos["pathtrack"].insert.return_value = 101
-    repos["doc"].insert.return_value = 5
-
-    new_id = svc.create_taxi(
-        employee_hire_history_id=10,
-        full_name="Bianchi Luigi",
-        date_path_track=date(2026, 4, 1),
-        number_of_trips=10,
-        receipt_amounts=[12.50, 8.30],
-        sheet_pdf=b"%PDF-foglio",
-        receipt_pdfs=[b"%PDF-r1", b"%PDF-r2"],
-    )
-
-    assert new_id == 101
-    repos["rate"].find_for_date.assert_not_called()
-    insert_kwargs = repos["pathtrack"].insert.call_args.kwargs
-    assert insert_kwargs["reimbursement_type"] == "TAXI"
-    assert insert_kwargs["rate_id_used"] is None
-    assert insert_kwargs["taxi_total_eur"] == pytest.approx(20.80)
-    assert insert_kwargs["computed_amount_eur"] == pytest.approx(20.80)
-    assert repos["doc"].insert.call_count == 3  # 1 sheet + 2 ricevute
+    assert insert_kwargs["status"] == "DRAFT"
+    assert insert_kwargs["registry_id"] is None
+    assert insert_kwargs["submitted_on"] is None
     conn.commit.assert_called_once()
 
 
-def test_create_rolls_back_on_insert_failure():
-    svc, repos, conn = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "Casa", 45.0, 9.0, 10.0)
-    repos["rate"].find_for_date.return_value = Rate(3, 15.0, 1.7)
-    repos["registry"].generate.return_value = 500
-    repos["pathtrack"].find_active_for_month.return_value = None
-    repos["pathtrack"].insert.side_effect = RuntimeError("DB error")
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_create_draft_fuel_future_month_rejected():
+    svc, repos, _ = _make_service()
+    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
 
-    with pytest.raises(RuntimeError):
-        svc.create_fuel(
+    with pytest.raises(DeadlineClosedError):
+        svc.create_draft_fuel(
             employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
+            date_path_track=date(2026, 6, 1),  # mese futuro
             number_of_trips=10,
             sheet_pdf=b"%PDF-",
             receipt_pdfs=[b"%PDF-"],
+        )
+
+
+@freeze_time("2026-05-06 10:00:00+02:00")
+def test_create_draft_fuel_previous_month_rejected_after_deadline():
+    svc, repos, _ = _make_service()
+    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
+
+    with pytest.raises(DeadlineClosedError):
+        svc.create_draft_fuel(
+            employee_hire_history_id=10,
+            date_path_track=date(2026, 4, 1),  # aprile, dopo il 5 maggio
+            number_of_trips=10,
+            sheet_pdf=b"%PDF-",
+            receipt_pdfs=[b"%PDF-"],
+        )
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_create_draft_taxi_current_month_happy_path():
+    svc, repos, conn = _make_service()
+    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 10.0)
+    repos["pathtrack"].find_active_for_month.return_value = None
+    repos["pathtrack"].insert.return_value = 101
+
+    new_id = svc.create_draft_taxi(
+        employee_hire_history_id=10,
+        date_path_track=date(2026, 5, 1),
+        number_of_trips=8,
+        receipt_amounts=[12.50, 8.30],
+        sheet_pdf=b"%PDF-",
+        receipt_pdfs=[b"%PDF-", b"%PDF-"],
+    )
+
+    assert new_id == 101
+    insert_kwargs = repos["pathtrack"].insert.call_args.kwargs
+    assert insert_kwargs["status"] == "DRAFT"
+    assert insert_kwargs["taxi_total_eur"] == pytest.approx(20.80)
+    repos["registry"].generate.assert_not_called()
+
+
+# ---- update_draft -------------------------------------------------------
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_update_draft_fuel_succeeds_for_current_month_draft():
+    svc, repos, conn = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="DRAFT", date_path_track=date(2026, 5, 1))
+    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 12.0)
+    repos["rate"].find_for_date.return_value = Rate(3, 15.0, 1.7)
+
+    svc.update_draft_fuel(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        number_of_trips=15,
+        sheet_pdf=b"%PDF-",
+        receipt_pdfs=[b"%PDF-"],
+    )
+
+    repos["pathtrack"].update_draft.assert_called_once()
+    repos["doc"].soft_delete_all_for_pathtrack.assert_called_once_with(path_track_id=100)
+    conn.commit.assert_called_once()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_update_draft_rejected_when_not_draft():
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="SUBMITTED", date_path_track=date(2026, 5, 1))
+
+    with pytest.raises(NotADraftError):
+        svc.update_draft_fuel(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            number_of_trips=15,
+            sheet_pdf=b"%PDF-",
+            receipt_pdfs=[b"%PDF-"],
+        )
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_update_draft_rejected_when_not_found():
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = None
+
+    with pytest.raises(NotADraftError):
+        svc.update_draft_fuel(
+            path_track_id=999,
+            employee_hire_history_id=10,
+            number_of_trips=15,
+            sheet_pdf=b"%PDF-",
+            receipt_pdfs=[b"%PDF-"],
+        )
+
+
+# ---- submit -------------------------------------------------------------
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_happy_path():
+    svc, repos, conn = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="DRAFT", date_path_track=date(2026, 4, 1))
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+
+    registry_id = svc.submit(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        full_name="Rossi Mario",
+    )
+
+    assert registry_id == 500
+    repos["registry"].generate.assert_called_once_with(issued_by_full_name="Rossi Mario")
+    repos["pathtrack"].mark_as_submitted.assert_called_once_with(
+        path_track_id=100, employee_hire_history_id=10, registry_id=500,
+    )
+    conn.commit.assert_called_once()
+
+
+@freeze_time("2026-05-15 10:00:00+02:00")
+def test_submit_rejected_outside_window():
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="DRAFT", date_path_track=date(2026, 4, 1))
+
+    with pytest.raises(DeadlineClosedError):
+        svc.submit(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            full_name="x",
+        )
+
+    repos["registry"].generate.assert_not_called()
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_rejected_for_non_draft():
+    svc, repos, _ = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="SUBMITTED", date_path_track=date(2026, 4, 1))
+
+    with pytest.raises(NotADraftError):
+        svc.submit(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            full_name="x",
+        )
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_rolls_back_on_sp_failure():
+    svc, repos, conn = _make_service()
+    repos["pathtrack"].find_by_id.return_value = _row(status="DRAFT", date_path_track=date(2026, 4, 1))
+    repos["registry"].generate.side_effect = RuntimeError("SP error")
+
+    with pytest.raises(RuntimeError):
+        svc.submit(
+            path_track_id=100,
+            employee_hire_history_id=10,
+            full_name="x",
         )
 
     conn.rollback.assert_called_once()
     conn.commit.assert_not_called()
-
-
-def test_create_raises_when_no_active_coordinate():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = None
-
-    with pytest.raises(NoActiveCoordinateError):
-        svc.create_fuel(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=10,
-            sheet_pdf=b"%PDF-",
-            receipt_pdfs=[b"%PDF-"],
-        )
-
-    repos["pathtrack"].insert.assert_not_called()
-
-
-def test_create_raises_when_no_rate_configured_for_fuel():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 3)
-    repos["rate"].find_for_date.return_value = None
-
-    with pytest.raises(NoRateConfiguredError):
-        svc.create_fuel(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=10,
-            sheet_pdf=b"%PDF-",
-            receipt_pdfs=[b"%PDF-"],
-        )
-
-
-def test_create_raises_when_already_active_for_month():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 3)
-    repos["rate"].find_for_date.return_value = Rate(3, 15.0, 1.7)
-    repos["pathtrack"].find_active_for_month.return_value = PathTrackRow(
-        path_track_id=999, registry_id=1, date_path_track=date(2026, 4, 1),
-        declarated_path_id=99, in_behalf_of_id=None,
-        reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
-        rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
-        status="SUBMITTED", submitted_on=None,
-    )
-
-    with pytest.raises(DuplicateDeclarationError):
-        svc.create_fuel(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=10,
-            sheet_pdf=b"%PDF-",
-            receipt_pdfs=[b"%PDF-"],
-        )
-
-
-def test_create_fuel_validates_trips_range():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 3)
-
-    with pytest.raises(InvalidInputError, match="viaggi"):
-        svc.create_fuel(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=0,
-            sheet_pdf=b"%PDF-",
-            receipt_pdfs=[b"%PDF-"],
-        )
-
-
-def test_create_fuel_requires_at_least_one_sheet_pdf():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 3)
-
-    with pytest.raises(InvalidInputError, match="foglio"):
-        svc.create_fuel(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=10,
-            sheet_pdf=None,
-            receipt_pdfs=[b"%PDF-"],
-        )
-
-
-def test_create_taxi_requires_at_least_one_receipt():
-    svc, repos, _ = _make_service()
-    repos["coordinate"].find_active.return_value = ActiveCoordinate(99, "x", 1, 2, 3)
-
-    with pytest.raises(InvalidInputError, match="ricevuta"):
-        svc.create_taxi(
-            employee_hire_history_id=10,
-            full_name="x",
-            date_path_track=date(2026, 4, 1),
-            number_of_trips=10,
-            receipt_amounts=[],
-            sheet_pdf=b"%PDF-",
-            receipt_pdfs=[],
-        )

@@ -1,11 +1,8 @@
-"""Orchestrazione transazionale per la dichiarazione mensile.
+"""Orchestrazione transazionale per la dichiarazione mensile (workflow DRAFT/SUBMITTED).
 
-Coordina:
-- CoordinateRepo, RateRepo, ReimbursementCalculator,
-- RegistryRepo (SP call), PathTrackRepo (INSERT),
-- PathTrackDocRepo (BLOB insert per ogni PDF)
-
-Tutto dentro una transazione pyodbc esplicita (autocommit OFF temporaneo).
+- create_draft_*: crea una bozza (Status=DRAFT, RegistryId=NULL). Niente SP.
+- update_draft_*: modifica una bozza esistente. Sostituisce i documenti.
+- submit: chiama SP Registro e marca SUBMITTED. Solo nella finestra 1-5 del mese successivo.
 """
 from __future__ import annotations
 
@@ -15,6 +12,10 @@ from typing import Callable, Optional, Sequence
 from fdp_app.pathtracks.calculator import (
     compute_fuel_reimbursement,
     compute_taxi_reimbursement,
+)
+from fdp_app.pathtracks.deadline import (
+    can_create_draft_for,
+    can_submit_for,
 )
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 from fdp_app.repos.doc_repo import PathTrackDocRepo
@@ -32,15 +33,19 @@ class NoRateConfiguredError(Exception):
 
 
 class DuplicateDeclarationError(Exception):
-    """Esiste gia' una dichiarazione attiva per lo stesso mese."""
+    """Esiste gia' una dichiarazione attiva (DRAFT o SUBMITTED) per lo stesso mese."""
 
 
 class DeadlineClosedError(Exception):
-    """Periodo di inserimento chiuso."""
+    """Finestra temporale non aperta per l'azione richiesta."""
 
 
 class InvalidInputError(Exception):
     """Input validato lato service rifiutato."""
+
+
+class NotADraftError(Exception):
+    """Tentativo di modificare/inviare un record non in stato DRAFT."""
 
 
 class PathTrackService:
@@ -60,6 +65,8 @@ class PathTrackService:
         self._pathtrack_repo = pathtrack_repo
         self._doc_repo = doc_repo
         self._connection_factory = connection_factory
+
+    # ---- shared validation -----------------------------------------------
 
     def _validate_common(
         self,
@@ -101,11 +108,12 @@ class PathTrackService:
                 pdf_bytes=pdf,
             )
 
-    def create_fuel(
+    # ---- create draft ----------------------------------------------------
+
+    def create_draft_fuel(
         self,
         *,
         employee_hire_history_id: int,
-        full_name: str,
         date_path_track: date,
         number_of_trips: int,
         sheet_pdf: Optional[bytes],
@@ -119,6 +127,11 @@ class PathTrackService:
         )
         if not receipt_pdfs:
             raise InvalidInputError("almeno una ricevuta carburante obbligatoria")
+
+        if not can_create_draft_for(date_path_track):
+            raise DeadlineClosedError(
+                f"Periodo di inserimento per {date_path_track:%Y-%m} non aperto"
+            )
 
         target_employee_id = in_behalf_of_id or employee_hire_history_id
 
@@ -154,10 +167,9 @@ class PathTrackService:
         prev_autocommit = getattr(conn, "autocommit", True)
         try:
             conn.autocommit = False
-            registry_id = self._registry_repo.generate(issued_by_full_name=full_name)
             new_id = self._pathtrack_repo.insert(
                 employee_hire_history_id=employee_hire_history_id,
-                registry_id=registry_id,
+                registry_id=None,
                 date_path_track=date_path_track,
                 declarated_path_id=coord.coordinate_id,
                 in_behalf_of_id=in_behalf_of_id,
@@ -167,6 +179,8 @@ class PathTrackService:
                 rate_id_used=rate.rate_id,
                 taxi_total_eur=None,
                 computed_amount_eur=amount,
+                status="DRAFT",
+                submitted_on=None,
             )
             self._insert_docs(
                 path_track_id=new_id,
@@ -183,11 +197,10 @@ class PathTrackService:
         finally:
             conn.autocommit = prev_autocommit
 
-    def create_taxi(
+    def create_draft_taxi(
         self,
         *,
         employee_hire_history_id: int,
-        full_name: str,
         date_path_track: date,
         number_of_trips: int,
         receipt_amounts: Sequence[float],
@@ -204,6 +217,11 @@ class PathTrackService:
             raise InvalidInputError("almeno una ricevuta con importo > 0 obbligatoria")
         if not receipt_pdfs:
             raise InvalidInputError("almeno una ricevuta taxi (PDF) obbligatoria")
+
+        if not can_create_draft_for(date_path_track):
+            raise DeadlineClosedError(
+                f"Periodo di inserimento per {date_path_track:%Y-%m} non aperto"
+            )
 
         target_employee_id = in_behalf_of_id or employee_hire_history_id
 
@@ -228,10 +246,9 @@ class PathTrackService:
         prev_autocommit = getattr(conn, "autocommit", True)
         try:
             conn.autocommit = False
-            registry_id = self._registry_repo.generate(issued_by_full_name=full_name)
             new_id = self._pathtrack_repo.insert(
                 employee_hire_history_id=employee_hire_history_id,
-                registry_id=registry_id,
+                registry_id=None,
                 date_path_track=date_path_track,
                 declarated_path_id=coord.coordinate_id,
                 in_behalf_of_id=in_behalf_of_id,
@@ -241,6 +258,8 @@ class PathTrackService:
                 rate_id_used=None,
                 taxi_total_eur=amount,
                 computed_amount_eur=amount,
+                status="DRAFT",
+                submitted_on=None,
             )
             self._insert_docs(
                 path_track_id=new_id,
@@ -257,7 +276,205 @@ class PathTrackService:
         finally:
             conn.autocommit = prev_autocommit
 
+    # ---- update draft ----------------------------------------------------
+
+    def update_draft_fuel(
+        self,
+        *,
+        path_track_id: int,
+        employee_hire_history_id: int,
+        number_of_trips: int,
+        sheet_pdf: Optional[bytes],
+        receipt_pdfs: Sequence[bytes],
+    ) -> None:
+        self._validate_common(
+            number_of_trips=number_of_trips,
+            sheet_pdf=sheet_pdf,
+            receipt_pdfs=receipt_pdfs,
+        )
+        if not receipt_pdfs:
+            raise InvalidInputError("almeno una ricevuta carburante obbligatoria")
+
+        row = self._pathtrack_repo.find_by_id(
+            path_track_id=path_track_id,
+            employee_hire_history_id=employee_hire_history_id,
+        )
+        if row is None:
+            raise NotADraftError("Dichiarazione non trovata o non posseduta")
+        if row.status != "DRAFT":
+            raise NotADraftError("Dichiarazione non e' in stato DRAFT")
+        if not can_create_draft_for(row.date_path_track):
+            raise DeadlineClosedError(
+                f"Periodo di modifica per {row.date_path_track:%Y-%m} chiuso"
+            )
+
+        coord = self._coord_repo.find_active(employee_hire_history_id)
+        if coord is None:
+            raise NoActiveCoordinateError(
+                "Nessun punto di partenza attivo"
+            )
+        rate = self._rate_repo.find_for_date(row.date_path_track)
+        if rate is None:
+            raise NoRateConfiguredError(
+                f"Nessun rate configurato per {row.date_path_track}"
+            )
+
+        amount = compute_fuel_reimbursement(
+            road_km_one_way=coord.road_km_to_workplace,
+            number_of_trips=number_of_trips,
+            avg_consumption_km_l=rate.avg_consumption_km_l,
+            avg_fuel_price_eur_l=rate.avg_fuel_price_eur_l,
+        )
+
+        conn = self._connection_factory()
+        prev_autocommit = getattr(conn, "autocommit", True)
+        try:
+            conn.autocommit = False
+            self._pathtrack_repo.update_draft(
+                path_track_id=path_track_id,
+                employee_hire_history_id=employee_hire_history_id,
+                reimbursement_type="CARBURANTE",
+                number_of_trips=number_of_trips,
+                road_km=coord.road_km_to_workplace,
+                rate_id_used=rate.rate_id,
+                taxi_total_eur=None,
+                computed_amount_eur=amount,
+            )
+            self._doc_repo.soft_delete_all_for_pathtrack(path_track_id=path_track_id)
+            self._insert_docs(
+                path_track_id=path_track_id,
+                sheet_pdf=sheet_pdf,
+                receipt_pdfs=receipt_pdfs,
+                sheet_title=f"Foglio di Percorso {row.date_path_track:%Y-%m}",
+                receipt_title_prefix=f"Ricevuta distributore {row.date_path_track:%Y-%m}",
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.autocommit = prev_autocommit
+
+    def update_draft_taxi(
+        self,
+        *,
+        path_track_id: int,
+        employee_hire_history_id: int,
+        number_of_trips: int,
+        receipt_amounts: Sequence[float],
+        sheet_pdf: Optional[bytes],
+        receipt_pdfs: Sequence[bytes],
+    ) -> None:
+        self._validate_common(
+            number_of_trips=number_of_trips,
+            sheet_pdf=sheet_pdf,
+            receipt_pdfs=receipt_pdfs,
+        )
+        if not receipt_amounts or all(a == 0 for a in receipt_amounts):
+            raise InvalidInputError("almeno una ricevuta con importo > 0 obbligatoria")
+        if not receipt_pdfs:
+            raise InvalidInputError("almeno una ricevuta taxi (PDF) obbligatoria")
+
+        row = self._pathtrack_repo.find_by_id(
+            path_track_id=path_track_id,
+            employee_hire_history_id=employee_hire_history_id,
+        )
+        if row is None:
+            raise NotADraftError("Dichiarazione non trovata o non posseduta")
+        if row.status != "DRAFT":
+            raise NotADraftError("Dichiarazione non e' in stato DRAFT")
+        if not can_create_draft_for(row.date_path_track):
+            raise DeadlineClosedError(
+                f"Periodo di modifica per {row.date_path_track:%Y-%m} chiuso"
+            )
+
+        coord = self._coord_repo.find_active(employee_hire_history_id)
+        if coord is None:
+            raise NoActiveCoordinateError("Nessun punto di partenza attivo")
+
+        amount = compute_taxi_reimbursement(receipt_amounts)
+
+        conn = self._connection_factory()
+        prev_autocommit = getattr(conn, "autocommit", True)
+        try:
+            conn.autocommit = False
+            self._pathtrack_repo.update_draft(
+                path_track_id=path_track_id,
+                employee_hire_history_id=employee_hire_history_id,
+                reimbursement_type="TAXI",
+                number_of_trips=number_of_trips,
+                road_km=coord.road_km_to_workplace,
+                rate_id_used=None,
+                taxi_total_eur=amount,
+                computed_amount_eur=amount,
+            )
+            self._doc_repo.soft_delete_all_for_pathtrack(path_track_id=path_track_id)
+            self._insert_docs(
+                path_track_id=path_track_id,
+                sheet_pdf=sheet_pdf,
+                receipt_pdfs=receipt_pdfs,
+                sheet_title=f"Foglio di Percorso {row.date_path_track:%Y-%m}",
+                receipt_title_prefix=f"Ricevuta taxi {row.date_path_track:%Y-%m}",
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.autocommit = prev_autocommit
+
+    # ---- submit ----------------------------------------------------------
+
+    def submit(
+        self,
+        *,
+        path_track_id: int,
+        employee_hire_history_id: int,
+        full_name: str,
+    ) -> int:
+        """Invia (conferma) una bozza. Chiama SP Registro e marca SUBMITTED.
+
+        Ritorna il RegistryId assegnato.
+        Raises NotADraftError, DeadlineClosedError.
+        """
+        row = self._pathtrack_repo.find_by_id(
+            path_track_id=path_track_id,
+            employee_hire_history_id=employee_hire_history_id,
+        )
+        if row is None:
+            raise NotADraftError("Dichiarazione non trovata o non posseduta")
+        if row.status != "DRAFT":
+            raise NotADraftError("Dichiarazione gia' inviata o cancellata")
+        if not can_submit_for(row.date_path_track):
+            raise DeadlineClosedError(
+                f"Finestra di invio chiusa per {row.date_path_track:%Y-%m} "
+                "(submit consentito solo dal 1 al 5 del mese successivo)"
+            )
+
+        conn = self._connection_factory()
+        prev_autocommit = getattr(conn, "autocommit", True)
+        try:
+            conn.autocommit = False
+            registry_id = self._registry_repo.generate(issued_by_full_name=full_name)
+            ok = self._pathtrack_repo.mark_as_submitted(
+                path_track_id=path_track_id,
+                employee_hire_history_id=employee_hire_history_id,
+                registry_id=registry_id,
+            )
+            if not ok:
+                raise NotADraftError("Submit fallito: stato cambiato durante la transazione")
+            conn.commit()
+            return registry_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.autocommit = prev_autocommit
+
+    # ---- delete / read ---------------------------------------------------
+
     def delete(self, *, path_track_id, employee_hire_history_id):
+        """Soft delete: only DRAFTs can be deleted (enforced at repo level)."""
         return self._pathtrack_repo.soft_delete(
             path_track_id=path_track_id,
             employee_hire_history_id=employee_hire_history_id,
