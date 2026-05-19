@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 from flask import (
-    Blueprint, current_app, render_template, session,
+    Blueprint, Response, abort, current_app, render_template, request, session,
 )
 
 from fdp_app.auth.decorators import admin_required, login_required
 from fdp_app.repos.employee_repo import EmployeeRepo
+from fdp_app.repos.pathtrack_repo import PathTrackRepo
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+_MONTH_NAMES_IT = [
+    "", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
+]
 
 
 @bp.route("/representable", methods=["GET"])
@@ -27,13 +33,29 @@ def representable():
     )
 
 
-# Stub temporanei per Task 8/9 (history, export). Necessari perche'
-# representable.html referenzia url_for('admin.history').
-@bp.route("/history", methods=["GET"], endpoint="history")
+@bp.route("/history", methods=["GET"])
 @login_required
 @admin_required
-def _history_stub():
-    return "history - not yet implemented", 501
+def history():
+    db = current_app.config["_db"]
+    pathtrack_repo = PathTrackRepo(db)
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    reimbursement_type = request.args.get("type") or None
+    if reimbursement_type:
+        reimbursement_type = reimbursement_type.upper()
+    rows = pathtrack_repo.list_for_sub_cdc(
+        sub_cdc_id=session["sub_cdc_id"],
+        year=year,
+        month=month,
+        reimbursement_type=reimbursement_type,
+    )
+    return render_template(
+        "admin/history.html",
+        rows=rows,
+        year=year, month=month, type=reimbursement_type,
+        month_names=_MONTH_NAMES_IT,
+    )
 
 
 @bp.route("/export", methods=["GET"], endpoint="export")

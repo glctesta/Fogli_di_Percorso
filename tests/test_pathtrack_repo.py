@@ -9,6 +9,7 @@ import pytest
 from fdp_app.repos.pathtrack_repo import (
     PathTrackRepo,
     PathTrackRow,
+    PathTrackWithEmployee,
 )
 
 
@@ -226,3 +227,48 @@ def test_list_for_employee_returns_rows_with_status():
     assert rows[0].registry_id is None
     assert rows[1].status == "SUBMITTED"
     assert rows[1].registry_id == 600
+
+
+def test_list_for_sub_cdc_no_filters():
+    db, cursor = _make_db(fetchall=[
+        (1, None, date(2026, 5, 1), 99, None, "CARBURANTE", 15, 10.5, 3, None, 53.55, "DRAFT", None, "Bianchi", "Luigi"),
+        (2, 600, date(2026, 4, 1), 99, None, "TAXI", 10, 8.0, None, 45.0, 45.0, "SUBMITTED", datetime(2026, 5, 5), "Verdi", "Maria"),
+    ])
+    repo = PathTrackRepo(db)
+    result = repo.list_for_sub_cdc(sub_cdc_id=42)
+
+    assert len(result) == 2
+    assert isinstance(result[0], PathTrackWithEmployee)
+    assert result[0].employee_full_name == "Bianchi Luigi"
+    assert result[0].row.status == "DRAFT"
+    assert result[1].employee_full_name == "Verdi Maria"
+    assert result[1].row.computed_amount_eur == pytest.approx(45.0)
+
+
+def test_list_for_sub_cdc_with_year_month_filter():
+    db, cursor = _make_db(fetchall=[])
+    repo = PathTrackRepo(db)
+    repo.list_for_sub_cdc(sub_cdc_id=42, year=2026, month=4)
+
+    sql_text, *params = cursor.execute.call_args[0]
+    assert "YEAR(pt.DatePathTrack) = ?" in sql_text
+    assert "MONTH(pt.DatePathTrack) = ?" in sql_text
+    assert params == [42, 2026, 4]
+
+
+def test_list_for_sub_cdc_with_type_filter():
+    db, cursor = _make_db(fetchall=[])
+    repo = PathTrackRepo(db)
+    repo.list_for_sub_cdc(sub_cdc_id=42, reimbursement_type="TAXI")
+
+    sql_text, *params = cursor.execute.call_args[0]
+    assert "pt.ReimbursementType = ?" in sql_text
+    assert "TAXI" in params
+
+
+def test_list_for_sub_cdc_uses_coalesce_for_in_behalf_of():
+    db, cursor = _make_db(fetchall=[])
+    repo = PathTrackRepo(db)
+    repo.list_for_sub_cdc(sub_cdc_id=42)
+    sql_text, *_ = cursor.execute.call_args[0]
+    assert "COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)" in sql_text

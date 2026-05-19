@@ -86,6 +86,25 @@ WHERE EmployeeHireHistoryId = ?
 ORDER BY DatePathTrack DESC
 """
 
+_QUERY_LIST_SUB_CDC = """
+SELECT
+    pt.PathTrackId, pt.RegistryId, pt.DatePathTrack, pt.DeclaratedPathId,
+    pt.InBehalfOfId, pt.ReimbursementType, pt.NumberOfTrips, pt.RoadKm,
+    pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn,
+    e.EmployeeSurname, e.EmployeeName
+FROM Employee.fdp.PathTracks pt
+JOIN Employee.dbo.EmployeeHireHistory h
+     ON h.EmployeeHireHistoryId = COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)
+JOIN Employee.dbo.Employees e ON e.EmployeeId = h.EmployeeId
+JOIN Employee.dbo.EmployeeCdcStories s
+     ON s.EmployeeHireHistoryId = h.EmployeeHireHistoryId
+    AND s.DateOut IS NULL
+WHERE s.SubCdcId = ?
+  AND pt.DateOut IS NULL
+  /*FILTERS*/
+ORDER BY pt.DatePathTrack DESC, e.EmployeeSurname, e.EmployeeName
+"""
+
 
 @dataclass(frozen=True)
 class PathTrackRow:
@@ -102,6 +121,18 @@ class PathTrackRow:
     computed_amount_eur: float
     status: str
     submitted_on: Optional[datetime]
+
+
+@dataclass(frozen=True)
+class PathTrackWithEmployee:
+    """A PathTrackRow enriched with the beneficiary employee's name."""
+    row: "PathTrackRow"
+    employee_surname: str
+    employee_name: str
+
+    @property
+    def employee_full_name(self) -> str:
+        return f"{self.employee_surname} {self.employee_name}"
 
 
 def _row_to_obj(row) -> PathTrackRow:
@@ -201,3 +232,61 @@ class PathTrackRepo(BaseRepo):
         finally:
             cursor.close()
         return [_row_to_obj(r) for r in rows]
+
+    def list_for_sub_cdc(
+        self,
+        *,
+        sub_cdc_id: int,
+        year: int | None = None,
+        month: int | None = None,
+        reimbursement_type: str | None = None,
+    ) -> list:
+        """Lists all path tracks for a SubCdcId, optionally filtered by year/month/type.
+
+        The JOIN follows COALESCE(InBehalfOfId, EmployeeHireHistoryId) so that
+        delegated entries are attributed to the represented employee.
+        """
+        filters = []
+        params = [sub_cdc_id]
+        if year is not None:
+            filters.append("YEAR(pt.DatePathTrack) = ?")
+            params.append(year)
+        if month is not None:
+            filters.append("MONTH(pt.DatePathTrack) = ?")
+            params.append(month)
+        if reimbursement_type:
+            filters.append("pt.ReimbursementType = ?")
+            params.append(reimbursement_type)
+        sql = _QUERY_LIST_SUB_CDC.replace(
+            "/*FILTERS*/",
+            ("AND " + " AND ".join(filters)) if filters else "",
+        )
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(sql, *params)
+            rows = cursor.fetchall()
+        finally:
+            cursor.close()
+        result = []
+        for r in rows:
+            ptrow = PathTrackRow(
+                path_track_id=r[0],
+                registry_id=r[1] if r[1] is not None else None,
+                date_path_track=r[2],
+                declarated_path_id=r[3],
+                in_behalf_of_id=r[4],
+                reimbursement_type=r[5].rstrip() if isinstance(r[5], str) else r[5],
+                number_of_trips=r[6],
+                road_km=float(r[7]),
+                rate_id_used=r[8],
+                taxi_total_eur=float(r[9]) if r[9] is not None else None,
+                computed_amount_eur=float(r[10]),
+                status=r[11].rstrip() if isinstance(r[11], str) else r[11],
+                submitted_on=r[12],
+            )
+            result.append(PathTrackWithEmployee(
+                row=ptrow,
+                employee_surname=r[13],
+                employee_name=r[14],
+            ))
+        return result
