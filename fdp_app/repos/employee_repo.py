@@ -29,6 +29,28 @@ JOIN Employee.dbo.Functions f
 WHERE k.NomeUser = ?
 """
 
+_QUERY_REPRESENTABLE = """
+SELECT
+    h.EmployeeHireHistoryId,
+    e.EmployeeSurname,
+    e.EmployeeName,
+    s.SubCdcId,
+    f.FunctionCode
+FROM Employee.dbo.Employees e
+JOIN Employee.dbo.EmployeeHireHistory h
+     ON h.EmployeeId = e.EmployeeId
+    AND h.EndWorkDate IS NULL
+    AND h.EmployeerId = 2
+JOIN Employee.dbo.EmployeeCdcStories s
+     ON s.EmployeeHireHistoryId = h.EmployeeHireHistoryId
+    AND s.DateOut IS NULL
+JOIN Employee.dbo.Functions f
+     ON f.FunctionId = s.FunctionId
+WHERE s.SubCdcId = ?
+  AND f.FunctionCode < ?
+ORDER BY e.EmployeeSurname, e.EmployeeName
+"""
+
 
 @dataclass(frozen=True)
 class EmployeeAuthRow:
@@ -39,6 +61,19 @@ class EmployeeAuthRow:
     name: str
     sub_cdc_id: int
     function_code: int
+
+
+@dataclass(frozen=True)
+class RepresentableEmployee:
+    employee_hire_history_id: int
+    surname: str
+    name: str
+    sub_cdc_id: int
+    function_code: int
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.surname} {self.name}"
 
 
 class EmployeeRepo(BaseRepo):
@@ -61,3 +96,25 @@ class EmployeeRepo(BaseRepo):
             sub_cdc_id=row[4],
             function_code=row[5],
         )
+
+    def find_representable_for(
+        self, *, sub_cdc_id: int, min_function_code: int = 60,
+    ) -> list:
+        """Lists employees (in the same SubCdc) that the logged-in user
+        (FC > min_function_code) can represent. They have FunctionCode < min."""
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_REPRESENTABLE, sub_cdc_id, min_function_code)
+            rows = cursor.fetchall()
+        finally:
+            cursor.close()
+        return [
+            RepresentableEmployee(
+                employee_hire_history_id=r[0],
+                surname=r[1],
+                name=r[2],
+                sub_cdc_id=r[3],
+                function_code=r[4],
+            )
+            for r in rows
+        ]
