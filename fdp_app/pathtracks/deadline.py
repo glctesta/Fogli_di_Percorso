@@ -29,3 +29,33 @@ def is_open_for_month(date_path_track: date) -> bool:
         next_month_first.replace(day=5), time(23, 59, 59), tzinfo=_TZ
     )
     return window_open <= now <= window_close
+
+
+def can_create_draft_for(date_path_track: date) -> bool:
+    """True se l'utente puo' creare o modificare una bozza per quel mese.
+
+    Mese ammesso:
+    - corrente (sempre)
+    - precedente (solo fino al 5 del mese corrente)
+    Mesi futuri o piu' vecchi di 2 mesi: vietato.
+    """
+    today = datetime.now(_TZ).date()
+    current_month = today.replace(day=1)
+
+    if date_path_track == current_month:
+        return True
+
+    previous_month = current_month - relativedelta(months=1)
+    if date_path_track == previous_month:
+        deadline_day = current_month.replace(day=5)
+        return today <= deadline_day
+
+    return False
+
+
+def can_submit_for(date_path_track: date) -> bool:
+    """True se l'utente puo' inviare (submit) una bozza per quel mese.
+
+    Alias di is_open_for_month: finestra 1-5 del mese successivo a date_path_track.
+    """
+    return is_open_for_month(date_path_track)
