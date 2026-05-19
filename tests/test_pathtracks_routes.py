@@ -267,6 +267,7 @@ def test_view_shows_declaration(client, mock_coord_repo, mock_rate_repo, mock_pa
         declarated_path_id=99, in_behalf_of_id=None,
         reimbursement_type="CARBURANTE", number_of_trips=20, road_km=10.0,
         rate_id_used=3, taxi_total_eur=None, computed_amount_eur=45.33,
+        status="SUBMITTED", submitted_on=None,
     )
     mock_doc_repo.list_for_pathtrack.return_value = []
 
@@ -297,6 +298,7 @@ def test_post_delete_soft_deletes_within_window(
         declarated_path_id=99, in_behalf_of_id=None,
         reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
         rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
+        status="SUBMITTED", submitted_on=None,
     )
     mock_pathtrack_repo.soft_delete.return_value = True
 
@@ -323,6 +325,7 @@ def test_post_delete_rejects_after_window(
         declarated_path_id=99, in_behalf_of_id=None,
         reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
         rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
+        status="SUBMITTED", submitted_on=None,
     )
 
     response = client.post(
@@ -342,8 +345,8 @@ def test_list_shows_user_declarations(
     from datetime import date as Date
     _login(client)
     mock_pathtrack_repo.list_for_employee.return_value = [
-        PathTrackRow(1, 100, Date(2026, 4, 1), 99, None, "CARBURANTE", 20, 10.0, 3, None, 45.33),
-        PathTrackRow(2, 101, Date(2026, 3, 1), 99, None, "TAXI", 10, 8.0, None, 30.0, 30.0),
+        PathTrackRow(1, 100, Date(2026, 4, 1), 99, None, "CARBURANTE", 20, 10.0, 3, None, 45.33, "SUBMITTED", None),
+        PathTrackRow(2, 101, Date(2026, 3, 1), 99, None, "TAXI", 10, 8.0, None, 30.0, 30.0, "SUBMITTED", None),
     ]
 
     response = client.get("/pathtracks")

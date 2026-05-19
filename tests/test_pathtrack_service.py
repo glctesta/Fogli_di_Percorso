@@ -170,6 +170,7 @@ def test_create_raises_when_already_active_for_month():
         declarated_path_id=99, in_behalf_of_id=None,
         reimbursement_type="CARBURANTE", number_of_trips=10, road_km=10.0,
         rate_id_used=3, taxi_total_eur=None, computed_amount_eur=10.0,
+        status="SUBMITTED", submitted_on=None,
     )
 
     with pytest.raises(DuplicateDeclarationError):
