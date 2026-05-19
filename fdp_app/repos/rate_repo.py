@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-from flask import has_app_context
+from fdp_app.repos.base_repo import BaseRepo
 
 
 _QUERY = """
@@ -24,16 +24,7 @@ class Rate:
     avg_fuel_price_eur_l: float
 
 
-class RateRepo:
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
-
+class RateRepo(BaseRepo):
     def find_for_date(self, target_date: date) -> Optional[Rate]:
         cursor = self._open_cursor()
         try:

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import List, Optional
 
-from flask import has_app_context
+from fdp_app.repos.base_repo import BaseRepo
 
 
 _QUERY_FIND_FOR_MONTH = """
@@ -122,16 +122,7 @@ def _row_to_obj(row) -> PathTrackRow:
     )
 
 
-class PathTrackRepo:
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
-
+class PathTrackRepo(BaseRepo):
     def find_active_for_month(self, *, employee_hire_history_id, date_path_track):
         cursor = self._open_cursor()
         try:

@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from flask import has_app_context
+from fdp_app.repos.base_repo import BaseRepo
 
 
 _QUERY_INSERT = """
@@ -44,16 +44,7 @@ class PathTrackDocRow:
     path_track_id: int
 
 
-class PathTrackDocRepo:
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
-
+class PathTrackDocRepo(BaseRepo):
     def insert(self, *, path_track_id: int, doc_title: str, pdf_bytes: bytes) -> int:
         cursor = self._open_cursor()
         try:

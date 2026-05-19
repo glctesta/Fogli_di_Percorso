@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from fdp_app.repos.base_repo import BaseRepo
+
 
 _QUERY_FIND_ACTIVE = """
 SELECT TOP 1
@@ -45,17 +47,7 @@ class ActiveCoordinate:
     road_km_to_workplace: Optional[float]
 
 
-class CoordinateRepo:
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        from flask import has_app_context
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
-
+class CoordinateRepo(BaseRepo):
     def find_active(self, employee_hire_history_id: int) -> Optional[ActiveCoordinate]:
         cursor = self._open_cursor()
         try:

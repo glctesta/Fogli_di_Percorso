@@ -12,7 +12,7 @@ La SP restituisce il nuovo RegistryId come risultato (SELECT finale).
 """
 from __future__ import annotations
 
-from flask import has_app_context
+from fdp_app.repos.base_repo import BaseRepo
 
 
 _SP_CALL = """
@@ -25,18 +25,9 @@ EXEC Employee.dbo.Registro
 """
 
 
-class RegistryRepo:
+class RegistryRepo(BaseRepo):
     REGISTRY_TYPE_ID = 790
     EMPLOYER_ID = 2
-
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
 
     def generate(self, *, issued_by_full_name: str) -> int:
         cursor = self._open_cursor()

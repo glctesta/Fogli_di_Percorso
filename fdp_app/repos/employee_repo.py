@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from fdp_app.repos.base_repo import BaseRepo
+
 
 _QUERY_FIND_BY_NOMEUSER = """
 SELECT k.pass,
@@ -39,19 +41,8 @@ class EmployeeAuthRow:
     function_code: int
 
 
-class EmployeeRepo:
+class EmployeeRepo(BaseRepo):
     """Accesso ai dati anagrafici."""
-
-    def __init__(self, db) -> None:
-        self._db = db
-
-    def _open_cursor(self):
-        """Apre un cursore. In production usa flask.g; in test delega a self._db.cursor()."""
-        from flask import has_app_context
-        if has_app_context():
-            from fdp_app.db import get_request_db
-            return get_request_db().cursor()
-        return self._db.cursor()
 
     def find_user_by_nomeuser(self, nome_user: str) -> Optional[EmployeeAuthRow]:
         cursor = self._open_cursor()
