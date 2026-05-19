@@ -51,3 +51,16 @@ def test_dashboard_card_links_to_pathtracks(client):
     assert response.status_code == 200
     assert b"/pathtracks" in response.data
     assert b"Disponibile nel Piano 3" not in response.data
+
+
+def test_dashboard_card_links_to_admin(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 10
+        sess["full_name"] = "Rossi Mario"
+        sess["sub_cdc_id"] = 7
+        sess["function_code"] = 65
+
+    response = client.get("/dashboard")
+    assert response.status_code == 200
+    assert b"/admin/representable" in response.data
+    assert b"Disponibile nel Piano 4" not in response.data

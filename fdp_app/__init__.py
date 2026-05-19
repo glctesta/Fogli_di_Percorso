@@ -102,3 +102,6 @@ def _register_blueprints(app: Flask) -> None:
 
     from fdp_app.pathtracks.routes import bp as pathtracks_bp
     app.register_blueprint(pathtracks_bp)
+
+    from fdp_app.admin.routes import bp as admin_bp
+    app.register_blueprint(admin_bp)
