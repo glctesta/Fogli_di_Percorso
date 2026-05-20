@@ -1,6 +1,9 @@
 """Route per la dichiarazione mensile (workflow DRAFT/SUBMITTED)."""
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from flask import (
     Blueprint, abort, current_app, flash, redirect, render_template, request,
     session, url_for, Response,
@@ -113,9 +116,7 @@ def new():
     target_month = previous_month_first_day()
     # Se siamo nel mese 1-5 del successivo, target=previous (default).
     # Altrimenti, target=current month
-    from datetime import datetime as _dt
-    from zoneinfo import ZoneInfo as _Z
-    today = _dt.now(_Z("Europe/Rome")).date()
+    today = datetime.now(ZoneInfo("Europe/Rome")).date()
     if not can_create_draft_for(target_month):
         # Il mese precedente non e' piu' modificabile, usiamo il corrente
         target_month = today.replace(day=1)
@@ -167,9 +168,7 @@ def create():
                         else url_for("pathtracks.new"))
 
     target_month = previous_month_first_day()
-    from datetime import datetime as _dt
-    from zoneinfo import ZoneInfo as _Z
-    today = _dt.now(_Z("Europe/Rome")).date()
+    today = datetime.now(ZoneInfo("Europe/Rome")).date()
     if not can_create_draft_for(target_month):
         target_month = today.replace(day=1)
 
