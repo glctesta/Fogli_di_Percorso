@@ -15,6 +15,7 @@ class TestSettings(Settings):
     SECRET_KEY = "test-secret-key-only-for-pytest"
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
+    BABEL_DEFAULT_LOCALE = "it"
 
 
 @pytest.fixture

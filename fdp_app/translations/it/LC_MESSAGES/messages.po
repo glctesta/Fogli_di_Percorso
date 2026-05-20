@@ -1,0 +1,645 @@
+# Italian translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-05-20 11:54+0300\n"
+"PO-Revision-Date: 2026-05-20 11:54+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: it\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: fdp_app/auth/routes.py:41
+msgid "Troppi tentativi falliti, riprovare piu' tardi."
+msgstr "Troppi tentativi falliti, riprovare piu' tardi."
+
+#: fdp_app/auth/routes.py:52
+msgid "Credenziali non valide."
+msgstr "Credenziali non valide."
+
+#: fdp_app/coordinates/routes.py:60
+msgid "Coordinate non valide."
+msgstr "Coordinate non valide."
+
+#: fdp_app/coordinates/routes.py:64
+msgid "Coordinate non valide (lat/lon fuori range)."
+msgstr "Coordinate non valide (lat/lon fuori range)."
+
+#: fdp_app/coordinates/routes.py:69
+msgid "Etichetta obbligatoria."
+msgstr "Etichetta obbligatoria."
+
+#: fdp_app/coordinates/routes.py:87
+msgid "Punto di partenza salvato."
+msgstr "Punto di partenza salvato."
+
+#: fdp_app/coordinates/routes.py:90
+msgid "Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo."
+msgstr "Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo."
+
+#: fdp_app/coordinates/routes.py:98
+msgid "Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi."
+msgstr "Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi."
+
+#: fdp_app/coordinates/routes.py:111
+msgid "Identificativo punto non valido."
+msgstr "Identificativo punto non valido."
+
+#: fdp_app/coordinates/routes.py:125
+msgid "Punto di partenza cancellato."
+msgstr "Punto di partenza cancellato."
+
+#: fdp_app/coordinates/routes.py:127
+msgid "Punto non trovato o non posseduto."
+msgstr "Punto non trovato o non posseduto."
+
+#: fdp_app/pathtracks/routes.py:68
+msgid "Foglio di percorso (PDF) obbligatorio."
+msgstr "Foglio di percorso (PDF) obbligatorio."
+
+#: fdp_app/pathtracks/routes.py:71
+msgid "Foglio di percorso troppo grande (max 5 MB)."
+msgstr "Foglio di percorso troppo grande (max 5 MB)."
+
+#: fdp_app/pathtracks/routes.py:73
+msgid "Il foglio di percorso non e' un PDF valido."
+msgstr "Il foglio di percorso non e' un PDF valido."
+
+#: fdp_app/pathtracks/routes.py:80
+#, python-format
+msgid "Ricevuta '%(filename)s' troppo grande (max 5 MB)."
+msgstr "Ricevuta '%(filename)s' troppo grande (max 5 MB)."
+
+#: fdp_app/pathtracks/routes.py:84
+msgid "Almeno una ricevuta (PDF) obbligatoria."
+msgstr "Almeno una ricevuta (PDF) obbligatoria."
+
+#: fdp_app/pathtracks/routes.py:110 fdp_app/pathtracks/routes.py:253
+msgid "Definisci prima il punto di partenza nella mappa."
+msgstr "Definisci prima il punto di partenza nella mappa."
+
+#: fdp_app/pathtracks/routes.py:127
+msgid "Periodo di inserimento chiuso."
+msgstr "Periodo di inserimento chiuso."
+
+#: fdp_app/pathtracks/routes.py:164
+msgid "Azione non riconosciuta."
+msgstr "Azione non riconosciuta."
+
+#: fdp_app/pathtracks/routes.py:175 fdp_app/pathtracks/routes.py:354
+msgid "Tipo rimborso non valido."
+msgstr "Tipo rimborso non valido."
+
+#: fdp_app/pathtracks/routes.py:182 fdp_app/pathtracks/routes.py:316
+msgid "Numero viaggi non valido."
+msgstr "Numero viaggi non valido."
+
+#: fdp_app/pathtracks/routes.py:210 fdp_app/pathtracks/routes.py:343
+msgid "Importi ricevute non validi."
+msgstr "Importi ricevute non validi."
+
+#: fdp_app/pathtracks/routes.py:240 fdp_app/pathtracks/routes.py:396
+#, python-format
+msgid "Dichiarazione inviata con successo. RegistryId: %(rid)s"
+msgstr "Dichiarazione inviata con successo. RegistryId: %(rid)s"
+
+#: fdp_app/pathtracks/routes.py:245
+#, python-format
+msgid ""
+"Bozza salvata ma non inviata: %(error)s. Potrai inviarla dal 1 al 5 del "
+"mese successivo."
+msgstr "Bozza salvata ma non inviata: %(error)s. Potrai inviarla dal 1 al 5 del mese successivo."
+
+#: fdp_app/pathtracks/routes.py:249
+msgid "Bozza salvata. La potrai aggiornare fino al 5 del mese successivo."
+msgstr "Bozza salvata. La potrai aggiornare fino al 5 del mese successivo."
+
+#: fdp_app/pathtracks/routes.py:258
+msgid "Rate non configurato per il mese. Contattare l'amministratore."
+msgstr "Rate non configurato per il mese. Contattare l'amministratore."
+
+#: fdp_app/pathtracks/routes.py:262
+msgid "Esiste gia' una dichiarazione attiva per il mese."
+msgstr "Esiste gia' una dichiarazione attiva per il mese."
+
+#: fdp_app/pathtracks/routes.py:361
+msgid "Bozza aggiornata."
+msgstr "Bozza aggiornata."
+
+#: fdp_app/pathtracks/routes.py:420
+msgid "Solo le bozze possono essere cancellate."
+msgstr "Solo le bozze possono essere cancellate."
+
+#: fdp_app/pathtracks/routes.py:434
+msgid "Bozza cancellata."
+msgstr "Bozza cancellata."
+
+#: fdp_app/pathtracks/routes.py:436
+msgid "Impossibile cancellare (non e' una bozza o gia' cancellata)."
+msgstr "Impossibile cancellare (non e' una bozza o gia' cancellata)."
+
+#: fdp_app/templates/base.html:30
+msgid "Menu di navigazione"
+msgstr "Menu di navigazione"
+
+#: fdp_app/templates/base.html:37 fdp_app/templates/dashboard/index.html:2
+msgid "Home"
+msgstr "Home"
+
+#: fdp_app/templates/base.html:42 fdp_app/templates/coordinates/index.html:2
+#: fdp_app/templates/coordinates/index.html:8
+#: fdp_app/templates/dashboard/index.html:24
+msgid "Punto di partenza"
+msgstr "Punto di partenza"
+
+#: fdp_app/templates/base.html:47 fdp_app/templates/dashboard/index.html:40
+msgid "Dichiarazioni"
+msgstr "Dichiarazioni"
+
+#: fdp_app/templates/base.html:58
+msgid "Esci dall'applicazione"
+msgstr "Esci dall'applicazione"
+
+#: fdp_app/templates/base.html:59
+msgid "Esci"
+msgstr "Esci"
+
+#: fdp_app/templates/base.html:73
+msgid "Chiudi"
+msgstr "Chiudi"
+
+#: fdp_app/templates/auth/login.html:10 fdp_app/templates/base.html:84
+msgid "gestione rimborsi carburante e taxi"
+msgstr "gestione rimborsi carburante e taxi"
+
+#: fdp_app/templates/admin/history.html:2
+#: fdp_app/templates/admin/history.html:4
+#: fdp_app/templates/admin/representable.html:45
+msgid "Storico dichiarazioni SubCdc"
+msgstr "Storico dichiarazioni SubCdc"
+
+#: fdp_app/templates/admin/history.html:8
+msgid "Anno"
+msgstr "Anno"
+
+#: fdp_app/templates/admin/history.html:13
+#: fdp_app/templates/admin/history.html:49
+#: fdp_app/templates/pathtracks/list.html:14
+msgid "Mese"
+msgstr "Mese"
+
+#: fdp_app/templates/admin/history.html:15
+#: fdp_app/templates/admin/history.html:26
+msgid "Tutti"
+msgstr "Tutti"
+
+#: fdp_app/templates/admin/history.html:24
+#: fdp_app/templates/admin/history.html:51
+#: fdp_app/templates/admin/view_pathtrack.html:23
+#: fdp_app/templates/pathtracks/list.html:16
+msgid "Tipo"
+msgstr "Tipo"
+
+#: fdp_app/templates/admin/history.html:27
+#: fdp_app/templates/pathtracks/new.html:39
+#: fdp_app/templates/pathtracks/view.html:72
+msgid "Carburante"
+msgstr "Carburante"
+
+#: fdp_app/templates/admin/history.html:28
+#: fdp_app/templates/pathtracks/new.html:44
+#: fdp_app/templates/pathtracks/view.html:78
+msgid "Taxi"
+msgstr "Taxi"
+
+#: fdp_app/templates/admin/history.html:32
+msgid "Filtra"
+msgstr "Filtra"
+
+#: fdp_app/templates/admin/history.html:38
+msgid "Export XLSX"
+msgstr "Export XLSX"
+
+#: fdp_app/templates/admin/history.html:48
+#: fdp_app/templates/admin/representable.html:14
+msgid "Dipendente"
+msgstr "Dipendente"
+
+#: fdp_app/templates/admin/history.html:50
+#: fdp_app/templates/admin/view_pathtrack.html:20
+#: fdp_app/templates/pathtracks/list.html:15
+#: fdp_app/templates/pathtracks/view.html:17
+msgid "Stato"
+msgstr "Stato"
+
+#: fdp_app/templates/admin/history.html:52
+#: fdp_app/templates/admin/view_pathtrack.html:25
+#: fdp_app/templates/pathtracks/list.html:17
+msgid "Viaggi A/R"
+msgstr "Viaggi A/R"
+
+#: fdp_app/templates/admin/history.html:53
+#: fdp_app/templates/admin/view_pathtrack.html:30
+#: fdp_app/templates/pathtracks/list.html:18
+msgid "Importo"
+msgstr "Importo"
+
+#: fdp_app/templates/admin/history.html:54
+#: fdp_app/templates/admin/view_pathtrack.html:21
+#: fdp_app/templates/pathtracks/list.html:19
+msgid "N. registro"
+msgstr "N. registro"
+
+#: fdp_app/templates/admin/history.html:65
+#: fdp_app/templates/admin/view_pathtrack.html:7
+#: fdp_app/templates/pathtracks/list.html:29
+#: fdp_app/templates/pathtracks/view.html:7
+msgid "BOZZA"
+msgstr "BOZZA"
+
+#: fdp_app/templates/admin/history.html:67
+#: fdp_app/templates/admin/view_pathtrack.html:9
+#: fdp_app/templates/pathtracks/list.html:31
+#: fdp_app/templates/pathtracks/view.html:9
+#: fdp_app/templates/pathtracks/view.html:19
+msgid "INVIATA"
+msgstr "INVIATA"
+
+#: fdp_app/templates/admin/history.html:77
+#: fdp_app/templates/pathtracks/list.html:40
+msgid "Dettagli"
+msgstr "Dettagli"
+
+#: fdp_app/templates/admin/history.html:85
+msgid "Nessuna dichiarazione trovata con i filtri selezionati."
+msgstr "Nessuna dichiarazione trovata con i filtri selezionati."
+
+#: fdp_app/templates/admin/history.html:89
+msgid "Torna ai rappresentati"
+msgstr "Torna ai rappresentati"
+
+#: fdp_app/templates/admin/representable.html:2
+#: fdp_app/templates/admin/representable.html:4
+msgid "Dipendenti rappresentabili"
+msgstr "Dipendenti rappresentabili"
+
+#: fdp_app/templates/admin/representable.html:15
+msgid "FC"
+msgstr "FC"
+
+#: fdp_app/templates/admin/representable.html:16
+msgid "Azioni"
+msgstr "Azioni"
+
+#: fdp_app/templates/admin/representable.html:27
+msgid "Mappa"
+msgstr "Mappa"
+
+#: fdp_app/templates/admin/representable.html:31
+#: fdp_app/templates/pathtracks/list.html:7
+#: fdp_app/templates/pathtracks/new.html:2
+#: fdp_app/templates/pathtracks/new.html:4
+msgid "Nuova dichiarazione"
+msgstr "Nuova dichiarazione"
+
+#: fdp_app/templates/admin/representable.html:40
+msgid "Nessun collega rappresentabile per il tuo SubCdc."
+msgstr "Nessun collega rappresentabile per il tuo SubCdc."
+
+#: fdp_app/templates/admin/view_pathtrack.html:2
+#: fdp_app/templates/pathtracks/view.html:2
+#, python-format
+msgid "Dichiarazione #%(id)s"
+msgstr "Dichiarazione #%(id)s"
+
+#: fdp_app/templates/admin/view_pathtrack.html:5
+msgid "Dichiarazione"
+msgstr "Dichiarazione"
+
+#: fdp_app/templates/admin/view_pathtrack.html:22
+#: fdp_app/templates/pathtracks/view.html:27
+msgid "Inviata il"
+msgstr "Inviata il"
+
+#: fdp_app/templates/admin/view_pathtrack.html:28
+#: fdp_app/templates/pathtracks/view.html:33
+msgid "Totale taxi (ricevute)"
+msgstr "Totale taxi (ricevute)"
+
+#: fdp_app/templates/admin/view_pathtrack.html:34
+msgid "Documenti"
+msgstr "Documenti"
+
+#: fdp_app/templates/admin/view_pathtrack.html:42
+#: fdp_app/templates/pathtracks/view.html:49
+msgid "Scarica"
+msgstr "Scarica"
+
+#: fdp_app/templates/admin/view_pathtrack.html:48
+#: fdp_app/templates/pathtracks/view.html:55
+msgid "Nessun documento."
+msgstr "Nessun documento."
+
+#: fdp_app/templates/admin/view_pathtrack.html:52
+msgid "Torna allo storico"
+msgstr "Torna allo storico"
+
+#: fdp_app/templates/auth/login.html:2
+msgid "Accedi"
+msgstr "Accedi"
+
+#: fdp_app/templates/auth/login.html:17
+msgid "Nome utente"
+msgstr "Nome utente"
+
+#: fdp_app/templates/auth/login.html:26
+msgid "Password"
+msgstr "Password"
+
+#: fdp_app/templates/auth/login.html:34
+msgid "Entra"
+msgstr "Entra"
+
+#: fdp_app/templates/coordinates/index.html:25
+msgid "Coordinate:"
+msgstr "Coordinate:"
+
+#: fdp_app/templates/coordinates/index.html:29
+msgid "Distanza stradale verso la sede:"
+msgstr "Distanza stradale verso la sede:"
+
+#: fdp_app/templates/coordinates/index.html:38
+msgid "Cancellare il punto di partenza?"
+msgstr "Cancellare il punto di partenza?"
+
+#: fdp_app/templates/coordinates/index.html:39
+msgid "Cancella punto"
+msgstr "Cancella punto"
+
+#: fdp_app/templates/coordinates/index.html:46
+msgid ""
+"Nessun punto attivo. Clicca sulla mappa per scegliere il tuo punto di "
+"partenza."
+msgstr "Nessun punto attivo. Clicca sulla mappa per scegliere il tuo punto di partenza."
+
+#: fdp_app/templates/coordinates/index.html:60
+msgid "Etichetta (es. \"Casa\", \"Via Roma 5\")"
+msgstr "Etichetta (es. \"Casa\", \"Via Roma 5\")"
+
+#: fdp_app/templates/coordinates/index.html:65
+msgid "Coordinate selezionate:"
+msgstr "Coordinate selezionate:"
+
+#: fdp_app/templates/coordinates/index.html:66
+msgid "Indirizzo (auto):"
+msgstr "Indirizzo (auto):"
+
+#: fdp_app/templates/coordinates/index.html:68
+msgid "Salva punto di partenza"
+msgstr "Salva punto di partenza"
+
+#: fdp_app/templates/dashboard/index.html:9
+#, python-format
+msgid "Benvenuto, %(name)s"
+msgstr "Benvenuto, %(name)s"
+
+#: fdp_app/templates/dashboard/index.html:12
+msgid "SubCdc:"
+msgstr "SubCdc:"
+
+#: fdp_app/templates/dashboard/index.html:14
+msgid "Codice Funzione:"
+msgstr "Codice Funzione:"
+
+#: fdp_app/templates/dashboard/index.html:26
+msgid "Definisci o aggiorna il tuo punto di partenza sulla mappa."
+msgstr "Definisci o aggiorna il tuo punto di partenza sulla mappa."
+
+#: fdp_app/templates/dashboard/index.html:30
+msgid "Vai alla mappa"
+msgstr "Vai alla mappa"
+
+#: fdp_app/templates/dashboard/index.html:42
+msgid "Inserisci viaggi, carica i PDF e calcola il rimborso."
+msgstr "Inserisci viaggi, carica i PDF e calcola il rimborso."
+
+#: fdp_app/templates/dashboard/index.html:46
+msgid "Vai alle dichiarazioni"
+msgstr "Vai alle dichiarazioni"
+
+#: fdp_app/templates/dashboard/index.html:56
+msgid "Amministrazione"
+msgstr "Amministrazione"
+
+#: fdp_app/templates/dashboard/index.html:58
+msgid "Rappresenta colleghi e consulta lo storico."
+msgstr "Rappresenta colleghi e consulta lo storico."
+
+#: fdp_app/templates/dashboard/index.html:61
+msgid "Vai all'area admin"
+msgstr "Vai all'area admin"
+
+#: fdp_app/templates/errors/403.html:2 fdp_app/templates/errors/403.html:5
+msgid "Accesso negato"
+msgstr "Accesso negato"
+
+#: fdp_app/templates/errors/403.html:6
+msgid "Non hai i permessi per accedere a questa pagina."
+msgstr "Non hai i permessi per accedere a questa pagina."
+
+#: fdp_app/templates/errors/403.html:7 fdp_app/templates/errors/404.html:7
+msgid "Torna alla home"
+msgstr "Torna alla home"
+
+#: fdp_app/templates/errors/404.html:2 fdp_app/templates/errors/404.html:5
+msgid "Pagina non trovata"
+msgstr "Pagina non trovata"
+
+#: fdp_app/templates/errors/404.html:6
+msgid "L'indirizzo richiesto non esiste."
+msgstr "L'indirizzo richiesto non esiste."
+
+#: fdp_app/templates/errors/500.html:2
+msgid "Errore interno"
+msgstr "Errore interno"
+
+#: fdp_app/templates/errors/500.html:5
+msgid "Errore interno del server"
+msgstr "Errore interno del server"
+
+#: fdp_app/templates/errors/500.html:6
+msgid ""
+"Si e' verificato un errore imprevisto. L'amministratore e' stato "
+"informato."
+msgstr "Si e' verificato un errore imprevisto. L'amministratore e' stato informato."
+
+#: fdp_app/templates/pathtracks/list.html:2
+#: fdp_app/templates/pathtracks/list.html:4
+msgid "Le mie dichiarazioni"
+msgstr "Le mie dichiarazioni"
+
+#: fdp_app/templates/pathtracks/list.html:47
+msgid "Nessuna dichiarazione presente."
+msgstr "Nessuna dichiarazione presente."
+
+#: fdp_app/templates/pathtracks/new.html:18
+msgid "Punto di partenza:"
+msgstr "Punto di partenza:"
+
+#: fdp_app/templates/pathtracks/new.html:19
+msgid "Distanza one-way:"
+msgstr "Distanza one-way:"
+
+#: fdp_app/templates/pathtracks/new.html:35
+#: fdp_app/templates/pathtracks/view.html:29
+#: fdp_app/templates/pathtracks/view.html:67
+msgid "Tipo rimborso"
+msgstr "Tipo rimborso"
+
+#: fdp_app/templates/pathtracks/new.html:49
+#: fdp_app/templates/pathtracks/view.html:83
+msgid "Numero viaggi (A/R)"
+msgstr "Numero viaggi (A/R)"
+
+#: fdp_app/templates/pathtracks/new.html:52
+msgid "Il sistema considera ogni viaggio come andata + ritorno."
+msgstr "Il sistema considera ogni viaggio come andata + ritorno."
+
+#: fdp_app/templates/pathtracks/new.html:56
+#: fdp_app/templates/pathtracks/view.html:89
+msgid "Importi ricevute (€)"
+msgstr "Importi ricevute (€)"
+
+#: fdp_app/templates/pathtracks/new.html:62
+#: fdp_app/templates/pathtracks/view.html:95
+msgid "+ Aggiungi ricevuta"
+msgstr "+ Aggiungi ricevuta"
+
+#: fdp_app/templates/pathtracks/new.html:66
+#: fdp_app/templates/pathtracks/view.html:99
+msgid "Foglio di percorso (PDF, max 5 MB)"
+msgstr "Foglio di percorso (PDF, max 5 MB)"
+
+#: fdp_app/templates/pathtracks/new.html:72
+#: fdp_app/templates/pathtracks/view.html:105
+msgid "Ricevute (PDF, max 5 MB ciascuna)"
+msgstr "Ricevute (PDF, max 5 MB ciascuna)"
+
+#: fdp_app/templates/pathtracks/new.html:78
+msgid "Anteprima rimborso:"
+msgstr "Anteprima rimborso:"
+
+#: fdp_app/templates/pathtracks/new.html:83
+msgid "Salva bozza"
+msgstr "Salva bozza"
+
+#: fdp_app/templates/pathtracks/new.html:88
+#: fdp_app/templates/pathtracks/view.html:123
+msgid "Confermi l'invio definitivo? Dopo l'invio non potrai più modificare."
+msgstr "Confermi l'invio definitivo? Dopo l'invio non potrai più modificare."
+
+#: fdp_app/templates/pathtracks/new.html:89
+#: fdp_app/templates/pathtracks/new.html:94
+msgid "Salva e invia"
+msgstr "Salva e invia"
+
+#: fdp_app/templates/pathtracks/new.html:93
+msgid "L'invio sara' possibile solo dal 1 al 5 del mese successivo."
+msgstr "L'invio sara' possibile solo dal 1 al 5 del mese successivo."
+
+#: fdp_app/templates/pathtracks/new.html:95
+msgid "disponibile dal 1 al 5 del mese successivo"
+msgstr "disponibile dal 1 al 5 del mese successivo"
+
+#: fdp_app/templates/pathtracks/new.html:99
+msgid "Annulla"
+msgstr "Annulla"
+
+#: fdp_app/templates/pathtracks/view.html:5
+#, python-format
+msgid "Dichiarazione - %(month)s %(year)s"
+msgstr "Dichiarazione - %(month)s %(year)s"
+
+#: fdp_app/templates/pathtracks/view.html:18
+msgid "BOZZA modificabile"
+msgstr "BOZZA modificabile"
+
+#: fdp_app/templates/pathtracks/view.html:22
+#: fdp_app/templates/pathtracks/view.html:24
+msgid "Numero registro"
+msgstr "Numero registro"
+
+#: fdp_app/templates/pathtracks/view.html:30
+msgid "Numero viaggi A/R"
+msgstr "Numero viaggi A/R"
+
+#: fdp_app/templates/pathtracks/view.html:31
+msgid "Distanza one-way"
+msgstr "Distanza one-way"
+
+#: fdp_app/templates/pathtracks/view.html:35
+msgid "Importo rimborso"
+msgstr "Importo rimborso"
+
+#: fdp_app/templates/pathtracks/view.html:41
+msgid "Documenti caricati"
+msgstr "Documenti caricati"
+
+#: fdp_app/templates/pathtracks/view.html:60
+msgid "Modifica bozza"
+msgstr "Modifica bozza"
+
+#: fdp_app/templates/pathtracks/view.html:111
+msgid "Aggiorna bozza"
+msgstr "Aggiorna bozza"
+
+#: fdp_app/templates/pathtracks/view.html:124
+#: fdp_app/templates/pathtracks/view.html:130
+msgid "Conferma e invia"
+msgstr "Conferma e invia"
+
+#: fdp_app/templates/pathtracks/view.html:129
+msgid "Invio possibile solo dal 1 al 5 del mese successivo."
+msgstr "Invio possibile solo dal 1 al 5 del mese successivo."
+
+#: fdp_app/templates/pathtracks/view.html:131
+msgid "dal 1 al 5 del mese successivo"
+msgstr "dal 1 al 5 del mese successivo"
+
+#: fdp_app/templates/pathtracks/view.html:139
+msgid "Invio admin in override scadenza. Confermi?"
+msgstr "Invio admin in override scadenza. Confermi?"
+
+#: fdp_app/templates/pathtracks/view.html:140
+msgid "Invia (override admin)"
+msgstr "Invia (override admin)"
+
+#: fdp_app/templates/pathtracks/view.html:150
+msgid "Cancellare la bozza?"
+msgstr "Cancellare la bozza?"
+
+#: fdp_app/templates/pathtracks/view.html:151
+msgid "Cancella bozza"
+msgstr "Cancella bozza"
+
+#: fdp_app/templates/pathtracks/view.html:190
+msgid "Dichiarazione gia' inviata: nessuna modifica possibile."
+msgstr "Dichiarazione gia' inviata: nessuna modifica possibile."
+
+#: fdp_app/templates/pathtracks/view.html:192
+msgid "Periodo di modifica chiuso."
+msgstr "Periodo di modifica chiuso."
+
+#: fdp_app/templates/pathtracks/view.html:199
+msgid "Torna alla lista"
+msgstr "Torna alla lista"
+
