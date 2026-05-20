@@ -27,7 +27,9 @@
         {% if row.taxi_total_eur is not none %}
         <tr><th>{{ _('Totale taxi (ricevute)') }}</th><td>&euro; {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
         {% endif %}
-        <tr><th>{{ _('Importo') }}</th><td><strong>&euro; {{ "%.2f"|format(row.computed_amount_eur) }}</strong></td></tr>
+        <tr><th>{{ _('Importo') }}</th>
+            <td><strong>{{ row.computed_amount_eur|eur_with_ron(row.bnr_rate_ron_per_eur) }}</strong></td>
+        </tr>
     </tbody>
 </table>
 

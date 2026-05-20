@@ -69,7 +69,7 @@
             </td>
             <td>{{ entry.row.reimbursement_type }}</td>
             <td>{{ entry.row.number_of_trips }}</td>
-            <td>&euro; {{ "%.2f"|format(entry.row.computed_amount_eur) }}</td>
+            <td>{{ entry.row.computed_amount_eur|eur_with_ron(entry.row.bnr_rate_ron_per_eur) }}</td>
             <td>{{ entry.row.registry_id or "-" }}</td>
             <td>
                 <a class="btn btn-sm btn-outline-primary"

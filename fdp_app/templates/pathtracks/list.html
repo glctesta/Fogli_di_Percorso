@@ -33,7 +33,7 @@
             </td>
             <td>{{ row.reimbursement_type }}</td>
             <td>{{ row.number_of_trips }}</td>
-            <td>€ {{ "%.2f"|format(row.computed_amount_eur) }}</td>
+            <td>{{ row.computed_amount_eur|eur_with_ron(row.bnr_rate_ron_per_eur) }}</td>
             <td>{{ row.registry_id or "-" }}</td>
             <td>
                 <a href="{{ url_for('pathtracks.view', path_track_id=row.path_track_id) }}"

@@ -32,7 +32,11 @@
                 {% if row.taxi_total_eur is not none %}
                 <tr><th>{{ _('Totale taxi (ricevute)') }}</th><td>€ {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
                 {% endif %}
-                <tr><th>{{ _('Importo rimborso') }}</th><td><span class="amount-preview">€ {{ "%.2f"|format(row.computed_amount_eur) }}</span></td></tr>
+                <tr><th>{{ _('Importo rimborso') }}</th>
+                    <td>
+                        <span class="amount-preview">{{ row.computed_amount_eur|eur_with_ron(row.bnr_rate_ron_per_eur) }}</span>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>

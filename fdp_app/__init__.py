@@ -49,6 +49,25 @@ def create_app(*, settings: type[Settings] | None = None,
 
     babel.init_app(app, locale_selector=_select_locale)
 
+    @app.template_filter("eur_with_ron")
+    def eur_with_ron(amount_eur, bnr_rate=None):
+        """Return formatted '<EUR> (RON <ron> - tasso <rate>)' string.
+        Falls back to EUR-only if bnr_rate is None."""
+        from markupsafe import Markup
+        if amount_eur is None:
+            return ""
+        eur_str = f"&euro; {amount_eur:.2f}"
+        if bnr_rate is None or bnr_rate == 0:
+            return Markup(eur_str)
+        ron = float(amount_eur) * float(bnr_rate)
+        ron_str = (
+            f"<small class=\"text-muted ms-2\">"
+            f"(RON {ron:.2f} &middot; "
+            f"tasso {bnr_rate:.4f})"
+            f"</small>"
+        )
+        return Markup(eur_str + " " + ron_str)
+
     _warn_if_missing_secret_key(app)
     _configure_logging(app)
     _register_error_handlers(app)
