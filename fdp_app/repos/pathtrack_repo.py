@@ -30,6 +30,22 @@ WHERE PathTrackId = ?
   AND DateOut IS NULL
 """
 
+_QUERY_FIND_BY_ID_IN_SUB_CDC = """
+SELECT TOP 1
+    pt.PathTrackId, pt.RegistryId, pt.DatePathTrack, pt.DeclaratedPathId,
+    pt.InBehalfOfId, pt.ReimbursementType, pt.NumberOfTrips, pt.RoadKm,
+    pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn
+FROM Employee.fdp.PathTracks pt
+JOIN Employee.dbo.EmployeeHireHistory h
+     ON h.EmployeeHireHistoryId = COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)
+JOIN Employee.dbo.EmployeeCdcStories s
+     ON s.EmployeeHireHistoryId = h.EmployeeHireHistoryId
+    AND s.DateOut IS NULL
+WHERE pt.PathTrackId = ?
+  AND s.SubCdcId = ?
+  AND pt.DateOut IS NULL
+"""
+
 _QUERY_INSERT = """
 INSERT INTO Employee.fdp.PathTracks
     (EmployeeHireHistoryId, RegistryId, DatePathTrack, DeclaratedPathId,
@@ -167,6 +183,15 @@ class PathTrackRepo(BaseRepo):
         cursor = self._open_cursor()
         try:
             cursor.execute(_QUERY_FIND_BY_ID, path_track_id, employee_hire_history_id)
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
+        return _row_to_obj(row) if row else None
+
+    def find_by_id_in_sub_cdc(self, *, path_track_id: int, sub_cdc_id: int):
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_FIND_BY_ID_IN_SUB_CDC, path_track_id, sub_cdc_id)
             row = cursor.fetchone()
         finally:
             cursor.close()

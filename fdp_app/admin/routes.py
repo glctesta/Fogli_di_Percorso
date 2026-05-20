@@ -4,6 +4,7 @@ from __future__ import annotations
 from flask import (
     Blueprint, Response, abort, current_app, render_template, request, session,
 )
+from fdp_app.repos.doc_repo import PathTrackDocRepo
 
 from fdp_app.admin.service import build_xlsx
 from fdp_app.auth.decorators import admin_required, login_required
@@ -56,6 +57,28 @@ def history():
         rows=rows,
         year=year, month=month, type=reimbursement_type,
         month_names=_MONTH_NAMES_IT,
+    )
+
+
+@bp.route("/pathtracks/<int:path_track_id>", methods=["GET"])
+@login_required
+@admin_required
+def view_pathtrack(path_track_id: int):
+    db = current_app.config["_db"]
+    pathtrack_repo = PathTrackRepo(db)
+    row = pathtrack_repo.find_by_id_in_sub_cdc(
+        path_track_id=path_track_id,
+        sub_cdc_id=session["sub_cdc_id"],
+    )
+    if row is None:
+        abort(404)
+    doc_repo = PathTrackDocRepo(db)
+    docs = doc_repo.list_for_pathtrack(path_track_id=path_track_id)
+    return render_template(
+        "admin/view_pathtrack.html",
+        row=row,
+        docs=docs,
+        month_label=_MONTH_NAMES_IT[row.date_path_track.month],
     )
 
 

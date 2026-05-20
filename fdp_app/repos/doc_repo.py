@@ -48,6 +48,21 @@ WHERE d.PathTrackDocId = ?
 """
 
 
+_QUERY_FIND_SUB_CDC_FOR_DOC = """
+SELECT s.SubCdcId
+FROM Employee.fdp.PathTrackDocs d
+JOIN Employee.fdp.PathTracks pt ON pt.PathTrackId = d.PathTrackId
+JOIN Employee.dbo.EmployeeHireHistory h
+     ON h.EmployeeHireHistoryId = COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)
+JOIN Employee.dbo.EmployeeCdcStories s
+     ON s.EmployeeHireHistoryId = h.EmployeeHireHistoryId
+    AND s.DateOut IS NULL
+WHERE d.PathTrackDocId = ?
+  AND d.DateOut IS NULL
+  AND pt.DateOut IS NULL
+"""
+
+
 @dataclass(frozen=True)
 class PathTrackDocRow:
     doc_id: int
@@ -108,3 +123,12 @@ class PathTrackDocRepo(BaseRepo):
         if row is None:
             return None
         return (int(row[0]), int(row[1]))
+
+    def find_sub_cdc_for_doc(self, *, doc_id: int):
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_FIND_SUB_CDC_FOR_DOC, doc_id)
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
+        return int(row[0]) if row else None

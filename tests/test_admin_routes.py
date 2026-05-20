@@ -123,3 +123,39 @@ def test_history_filters_by_type(client, mock_pathtrack_repo_admin):
     assert response.status_code == 200
     kwargs = mock_pathtrack_repo_admin.list_for_sub_cdc.call_args.kwargs
     assert kwargs["reimbursement_type"] == "TAXI"  # uppercased
+
+
+def test_view_pathtrack_requires_admin(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 10
+        sess["function_code"] = 50
+    response = client.get("/admin/pathtracks/100")
+    assert response.status_code == 403
+
+
+def test_view_pathtrack_admin_shows_subordinate_detail(client, mock_pathtrack_repo_admin):
+    from fdp_app.repos.pathtrack_repo import PathTrackRow
+    from datetime import date as Date
+    _login_admin(client, sub_cdc_id=42)
+    with patch("fdp_app.admin.routes.PathTrackDocRepo") as doc_cls:
+        doc = MagicMock()
+        doc.list_for_pathtrack.return_value = []
+        doc_cls.return_value = doc
+        mock_pathtrack_repo_admin.find_by_id_in_sub_cdc.return_value = PathTrackRow(
+            path_track_id=100, registry_id=500, date_path_track=Date(2026, 4, 1),
+            declarated_path_id=99, in_behalf_of_id=None,
+            reimbursement_type="CARBURANTE", number_of_trips=20, road_km=10.0,
+            rate_id_used=3, taxi_total_eur=None, computed_amount_eur=53.55,
+            status="SUBMITTED", submitted_on=None,
+        )
+        response = client.get("/admin/pathtracks/100")
+        assert response.status_code == 200
+        assert b"INVIATA" in response.data
+        assert b"sola consultazione" in response.data.lower()
+
+
+def test_view_pathtrack_admin_404_when_other_sub_cdc(client, mock_pathtrack_repo_admin):
+    _login_admin(client, sub_cdc_id=42)
+    mock_pathtrack_repo_admin.find_by_id_in_sub_cdc.return_value = None
+    response = client.get("/admin/pathtracks/999")
+    assert response.status_code == 404

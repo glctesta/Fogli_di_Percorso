@@ -101,3 +101,15 @@ def test_find_owner_employee_for_doc_uses_join():
     sql_text, *_params = cursor.execute.call_args[0]
     assert "JOIN Employee.fdp.PathTracks" in sql_text
     assert "COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)" in sql_text
+
+
+def test_find_sub_cdc_for_doc_returns_sub_cdc_id():
+    db, _ = _make_db(fetchone=(42,))
+    repo = PathTrackDocRepo(db)
+    assert repo.find_sub_cdc_for_doc(doc_id=99) == 42
+
+
+def test_find_sub_cdc_for_doc_returns_none_when_missing():
+    db, _ = _make_db(fetchone=None)
+    repo = PathTrackDocRepo(db)
+    assert repo.find_sub_cdc_for_doc(doc_id=999) is None

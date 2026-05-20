@@ -475,7 +475,13 @@ def download_doc(doc_id: int):
         abort(404)
     employee_id, beneficiary_id = owner
     if session["user_id"] not in (employee_id, beneficiary_id):
-        abort(404)
+        # Admin fallback: same SubCdcId?
+        if session.get("function_code", 0) > 60:
+            sub_cdc_owner = doc_repo.find_sub_cdc_for_doc(doc_id=doc_id)
+            if sub_cdc_owner is None or sub_cdc_owner != session.get("sub_cdc_id"):
+                abort(404)
+        else:
+            abort(404)
 
     return Response(
         pdf_bytes,

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dichiarazione #{{ row.path_track_id }} - Admin{% endblock %}
+{% block content %}
+<h2>
+    <i class="bi bi-receipt"></i> Dichiarazione
+    {% if row.status == "DRAFT" %}
+    <span class="badge bg-warning text-dark ms-2">BOZZA</span>
+    {% else %}
+    <span class="badge bg-success ms-2">INVIATA</span>
+    {% endif %}
+</h2>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Vista <strong>admin</strong> (sola consultazione). Solo il dipendente proprietario pu&ograve; modificare la bozza.
+</div>
+
+<table class="table">
+    <tbody>
+        <tr><th>Stato</th><td>{{ row.status }}</td></tr>
+        {% if row.registry_id %}<tr><th>N. registro</th><td><strong>{{ row.registry_id }}</strong></td></tr>{% endif %}
+        {% if row.submitted_on %}<tr><th>Inviata il</th><td>{{ row.submitted_on.strftime("%d/%m/%Y %H:%M") }}</td></tr>{% endif %}
+        <tr><th>Tipo</th><td>{{ row.reimbursement_type }}</td></tr>
+        <tr><th>Mese di riferimento</th><td>{{ month_label }} {{ row.date_path_track.year }}</td></tr>
+        <tr><th>Viaggi A/R</th><td>{{ row.number_of_trips }}</td></tr>
+        <tr><th>Km one-way</th><td>{{ "%.3f"|format(row.road_km) }}</td></tr>
+        {% if row.taxi_total_eur is not none %}
+        <tr><th>Totale taxi</th><td>&euro; {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
+        {% endif %}
+        <tr><th>Importo</th><td><strong>&euro; {{ "%.2f"|format(row.computed_amount_eur) }}</strong></td></tr>
+    </tbody>
+</table>
+
+<h4>Documenti</h4>
+{% if docs %}
+<ul class="list-group mb-3">
+    {% for doc in docs %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-pdf"></i> {{ doc.doc_title }}</span>
+        <a href="{{ url_for('pathtracks.download_doc', doc_id=doc.doc_id) }}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download"></i> Scarica
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted">Nessun documento.</p>
+{% endif %}
+
+<a href="{{ url_for('admin.history') }}" class="btn btn-link">
+    <i class="bi bi-arrow-left"></i> Torna allo storico
+</a>
+{% endblock %}

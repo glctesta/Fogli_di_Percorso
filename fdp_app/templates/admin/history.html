@@ -73,7 +73,7 @@
             <td>{{ entry.row.registry_id or "-" }}</td>
             <td>
                 <a class="btn btn-sm btn-outline-primary"
-                   href="{{ url_for('pathtracks.view', path_track_id=entry.row.path_track_id) }}">
+                   href="{{ url_for('admin.view_pathtrack', path_track_id=entry.row.path_track_id) }}">
                     Dettagli
                 </a>
             </td>
