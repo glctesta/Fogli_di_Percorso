@@ -13,7 +13,7 @@ def resolve_target_employee(default_employee_id: int) -> tuple[int, int | None, 
     Returns (target_id, in_behalf_of_id, target_employee_obj):
     - target_id: ID of the employee the action operates ON
     - in_behalf_of_id: None when target == logged-in user; the target_id when delegated
-    - target_employee_obj: the RepresentableEmployee object (with name) when delegated, None otherwise
+    - target_employee_obj: the RepresentableEmployee object when delegated, None otherwise
 
     Reads `on_behalf_of` from request.args OR request.form (in that order).
     Validates the requesting user can represent the target. Aborts 403 if not.

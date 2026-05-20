@@ -7,7 +7,7 @@ from flask import (
 )
 
 from fdp_app.auth.decorators import login_required
-from fdp_app.auth.helpers import resolve_target_employee
+from fdp_app.admin.helpers import resolve_target_employee
 from fdp_app.coordinates.service import (
     ActiveCoordinateAlreadyExists,
     CoordinateService,

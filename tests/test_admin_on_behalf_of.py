@@ -12,7 +12,7 @@ from fdp_app.repos.employee_repo import RepresentableEmployee
 @pytest.fixture
 def mock_employee_repo_for_resolver():
     """Patch EmployeeRepo dove viene importato dai resolve helpers."""
-    with patch("fdp_app.auth.helpers.EmployeeRepo") as cls:
+    with patch("fdp_app.admin.helpers.EmployeeRepo") as cls:
         instance = MagicMock()
         instance.find_representable_for.return_value = [
             RepresentableEmployee(101, "Bianchi", "Luigi", 42, 50),

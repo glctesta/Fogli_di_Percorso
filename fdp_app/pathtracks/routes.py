@@ -7,7 +7,7 @@ from flask import (
 )
 
 from fdp_app.auth.decorators import login_required
-from fdp_app.auth.helpers import resolve_target_employee
+from fdp_app.admin.helpers import resolve_target_employee
 from fdp_app.db import get_request_db
 from fdp_app.pathtracks.deadline import (
     can_create_draft_for,
