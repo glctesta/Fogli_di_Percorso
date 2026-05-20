@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Accedi - Fogli di Percorso{% endblock %}
+{% block title %}{{ _('Accedi') }} - Fogli di Percorso{% endblock %}
 {% block content %}
 <div class="fdp-login-wrapper">
     <div class="card fdp-login-card">
@@ -7,14 +7,14 @@
             <img src="{{ url_for('static', filename='img/logo.png') }}"
                  alt="Logo Fogli di Percorso" class="fdp-login-logo">
             <h3 class="card-title mb-1">Fogli di Percorso</h3>
-            <p class="text-muted mb-4">Gestione rimborsi carburante e taxi</p>
+            <p class="text-muted mb-4">{{ _('gestione rimborsi carburante e taxi') }}</p>
 
             <form method="post" novalidate class="text-start">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="mb-3">
                     <label class="form-label" for="nome_user">
-                        <i class="bi bi-person"></i> Nome utente
+                        <i class="bi bi-person"></i> {{ _('Nome utente') }}
                     </label>
                     <input class="form-control form-control-lg" type="text"
                            name="nome_user" id="nome_user" required autofocus
@@ -23,7 +23,7 @@
 
                 <div class="mb-4">
                     <label class="form-label" for="password">
-                        <i class="bi bi-lock"></i> Password
+                        <i class="bi bi-lock"></i> {{ _('Password') }}
                     </label>
                     <input class="form-control form-control-lg" type="password"
                            name="password" id="password" required
@@ -31,7 +31,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg w-100">
-                    <i class="bi bi-box-arrow-in-right"></i> Entra
+                    <i class="bi bi-box-arrow-in-right"></i> {{ _('Entra') }}
                 </button>
             </form>
         </div>

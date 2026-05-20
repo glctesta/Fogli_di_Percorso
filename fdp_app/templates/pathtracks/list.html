@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Le mie dichiarazioni - Fogli di Percorso{% endblock %}
+{% block title %}{{ _('Le mie dichiarazioni') }} - Fogli di Percorso{% endblock %}
 {% block content %}
-<h2><i class="bi bi-receipt"></i> Le mie dichiarazioni</h2>
+<h2><i class="bi bi-receipt"></i> {{ _('Le mie dichiarazioni') }}</h2>
 
 <a href="{{ url_for('pathtracks.new') }}" class="btn btn-primary mb-3">
-    <i class="bi bi-plus-circle"></i> Nuova dichiarazione
+    <i class="bi bi-plus-circle"></i> {{ _('Nuova dichiarazione') }}
 </a>
 
 {% if rows %}
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Mese</th>
-            <th>Stato</th>
-            <th>Tipo</th>
-            <th>Viaggi A/R</th>
-            <th>Importo</th>
-            <th>N. registro</th>
+            <th>{{ _('Mese') }}</th>
+            <th>{{ _('Stato') }}</th>
+            <th>{{ _('Tipo') }}</th>
+            <th>{{ _('Viaggi A/R') }}</th>
+            <th>{{ _('Importo') }}</th>
+            <th>{{ _('N. registro') }}</th>
             <th></th>
         </tr>
     </thead>
@@ -26,9 +26,9 @@
             <td>{{ month_names[row.date_path_track.month] }} {{ row.date_path_track.year }}</td>
             <td>
                 {% if row.status == "DRAFT" %}
-                <span class="badge bg-warning text-dark">BOZZA</span>
+                <span class="badge bg-warning text-dark">{{ _('BOZZA') }}</span>
                 {% else %}
-                <span class="badge bg-success">INVIATA</span>
+                <span class="badge bg-success">{{ _('INVIATA') }}</span>
                 {% endif %}
             </td>
             <td>{{ row.reimbursement_type }}</td>
@@ -37,13 +37,13 @@
             <td>{{ row.registry_id or "-" }}</td>
             <td>
                 <a href="{{ url_for('pathtracks.view', path_track_id=row.path_track_id) }}"
-                   class="btn btn-sm btn-outline-primary">Dettagli</a>
+                   class="btn btn-sm btn-outline-primary">{{ _('Dettagli') }}</a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
-<div class="alert alert-info">Nessuna dichiarazione presente.</div>
+<div class="alert alert-info">{{ _('Nessuna dichiarazione presente.') }}</div>
 {% endif %}
 {% endblock %}

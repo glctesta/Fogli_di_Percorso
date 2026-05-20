@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Storico SubCdc - Fogli di Percorso{% endblock %}
+{% block title %}{{ _('Storico dichiarazioni SubCdc') }} - Fogli di Percorso{% endblock %}
 {% block content %}
-<h2><i class="bi bi-clock-history"></i> Storico dichiarazioni SubCdc</h2>
+<h2><i class="bi bi-clock-history"></i> {{ _('Storico dichiarazioni SubCdc') }}</h2>
 
 <form method="get" class="row g-2 mb-3">
     <div class="col-md-2">
-        <label class="form-label">Anno</label>
+        <label class="form-label">{{ _('Anno') }}</label>
         <input type="number" name="year" min="2024" max="2100"
                value="{{ year or '' }}" class="form-control">
     </div>
     <div class="col-md-2">
-        <label class="form-label">Mese</label>
+        <label class="form-label">{{ _('Mese') }}</label>
         <select name="month" class="form-select">
-            <option value="">Tutti</option>
+            <option value="">{{ _('Tutti') }}</option>
             {% for m in range(1, 13) %}
             <option value="{{ m }}" {% if month == m %}selected{% endif %}>
                 {{ month_names[m] }}
@@ -21,21 +21,21 @@
         </select>
     </div>
     <div class="col-md-2">
-        <label class="form-label">Tipo</label>
+        <label class="form-label">{{ _('Tipo') }}</label>
         <select name="type" class="form-select">
-            <option value="">Tutti</option>
-            <option value="CARBURANTE" {% if type == "CARBURANTE" %}selected{% endif %}>Carburante</option>
-            <option value="TAXI" {% if type == "TAXI" %}selected{% endif %}>Taxi</option>
+            <option value="">{{ _('Tutti') }}</option>
+            <option value="CARBURANTE" {% if type == "CARBURANTE" %}selected{% endif %}>{{ _('Carburante') }}</option>
+            <option value="TAXI" {% if type == "TAXI" %}selected{% endif %}>{{ _('Taxi') }}</option>
         </select>
     </div>
     <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filtra</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> {{ _('Filtra') }}</button>
     </div>
     <div class="col-md-4 d-flex align-items-end justify-content-end">
         {% if year and month %}
         <a class="btn btn-outline-success"
            href="{{ url_for('admin.export', year=year, month=month) }}">
-            <i class="bi bi-file-earmark-excel"></i> Export XLSX
+            <i class="bi bi-file-earmark-excel"></i> {{ _('Export XLSX') }}
         </a>
         {% endif %}
     </div>
@@ -45,13 +45,13 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Dipendente</th>
-            <th>Mese</th>
-            <th>Stato</th>
-            <th>Tipo</th>
-            <th>Viaggi</th>
-            <th>Importo</th>
-            <th>Reg.</th>
+            <th>{{ _('Dipendente') }}</th>
+            <th>{{ _('Mese') }}</th>
+            <th>{{ _('Stato') }}</th>
+            <th>{{ _('Tipo') }}</th>
+            <th>{{ _('Viaggi A/R') }}</th>
+            <th>{{ _('Importo') }}</th>
+            <th>{{ _('N. registro') }}</th>
             <th></th>
         </tr>
     </thead>
@@ -62,9 +62,9 @@
             <td>{{ month_names[entry.row.date_path_track.month] }} {{ entry.row.date_path_track.year }}</td>
             <td>
                 {% if entry.row.status == "DRAFT" %}
-                <span class="badge bg-warning text-dark">BOZZA</span>
+                <span class="badge bg-warning text-dark">{{ _('BOZZA') }}</span>
                 {% else %}
-                <span class="badge bg-success">INVIATA</span>
+                <span class="badge bg-success">{{ _('INVIATA') }}</span>
                 {% endif %}
             </td>
             <td>{{ entry.row.reimbursement_type }}</td>
@@ -74,7 +74,7 @@
             <td>
                 <a class="btn btn-sm btn-outline-primary"
                    href="{{ url_for('admin.view_pathtrack', path_track_id=entry.row.path_track_id) }}">
-                    Dettagli
+                    {{ _('Dettagli') }}
                 </a>
             </td>
         </tr>
@@ -82,10 +82,10 @@
     </tbody>
 </table>
 {% else %}
-<div class="alert alert-info">Nessuna dichiarazione trovata con i filtri selezionati.</div>
+<div class="alert alert-info">{{ _('Nessuna dichiarazione trovata con i filtri selezionati.') }}</div>
 {% endif %}
 
 <a href="{{ url_for('admin.representable') }}" class="btn btn-link">
-    <i class="bi bi-arrow-left"></i> Torna ai rappresentati
+    <i class="bi bi-arrow-left"></i> {{ _('Torna ai rappresentati') }}
 </a>
 {% endblock %}

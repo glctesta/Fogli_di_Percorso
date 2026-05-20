@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Dichiarazione #{{ row.path_track_id }} - Fogli di Percorso{% endblock %}
+{% block title %}{{ _('Dichiarazione #%(id)s', id=row.path_track_id) }} - Fogli di Percorso{% endblock %}
 {% block content %}
 <h2>
-    <i class="bi bi-receipt"></i> Dichiarazione - {{ month_label }} {{ row.date_path_track.year }}
+    <i class="bi bi-receipt"></i> {{ _('Dichiarazione - %(month)s %(year)s', month=month_label, year=row.date_path_track.year) }}
     {% if row.status == "DRAFT" %}
-    <span class="badge bg-warning text-dark ms-2">BOZZA</span>
+    <span class="badge bg-warning text-dark ms-2">{{ _('BOZZA') }}</span>
     {% else %}
-    <span class="badge bg-success ms-2">INVIATA</span>
+    <span class="badge bg-success ms-2">{{ _('INVIATA') }}</span>
     {% endif %}
 </h2>
 
@@ -14,31 +14,31 @@
     <div class="card-body">
         <table class="table table-borderless mb-0">
             <tbody>
-                <tr><th style="width: 35%">Stato</th><td>
-                    {% if row.status == "DRAFT" %}<span class="badge bg-warning text-dark">BOZZA modificabile</span>
-                    {% else %}<span class="badge bg-success">INVIATA</span>{% endif %}
+                <tr><th style="width: 35%">{{ _('Stato') }}</th><td>
+                    {% if row.status == "DRAFT" %}<span class="badge bg-warning text-dark">{{ _('BOZZA modificabile') }}</span>
+                    {% else %}<span class="badge bg-success">{{ _('INVIATA') }}</span>{% endif %}
                 </td></tr>
                 {% if row.registry_id %}
-                <tr><th>Numero registro</th><td><strong>{{ row.registry_id }}</strong></td></tr>
+                <tr><th>{{ _('Numero registro') }}</th><td><strong>{{ row.registry_id }}</strong></td></tr>
                 {% else %}
-                <tr><th>Numero registro</th><td><em class="text-muted">(non ancora assegnato)</em></td></tr>
+                <tr><th>{{ _('Numero registro') }}</th><td><em class="text-muted">(non ancora assegnato)</em></td></tr>
                 {% endif %}
                 {% if row.submitted_on %}
-                <tr><th>Inviata il</th><td>{{ row.submitted_on.strftime("%d/%m/%Y %H:%M") }}</td></tr>
+                <tr><th>{{ _('Inviata il') }}</th><td>{{ row.submitted_on.strftime("%d/%m/%Y %H:%M") }}</td></tr>
                 {% endif %}
-                <tr><th>Tipo rimborso</th><td>{{ row.reimbursement_type }}</td></tr>
-                <tr><th>Numero viaggi A/R</th><td>{{ row.number_of_trips }}</td></tr>
-                <tr><th>Distanza one-way</th><td>{{ "%.3f"|format(row.road_km) }} km</td></tr>
+                <tr><th>{{ _('Tipo rimborso') }}</th><td>{{ row.reimbursement_type }}</td></tr>
+                <tr><th>{{ _('Numero viaggi A/R') }}</th><td>{{ row.number_of_trips }}</td></tr>
+                <tr><th>{{ _('Distanza one-way') }}</th><td>{{ "%.3f"|format(row.road_km) }} km</td></tr>
                 {% if row.taxi_total_eur is not none %}
-                <tr><th>Totale taxi (ricevute)</th><td>€ {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
+                <tr><th>{{ _('Totale taxi (ricevute)') }}</th><td>€ {{ "%.2f"|format(row.taxi_total_eur) }}</td></tr>
                 {% endif %}
-                <tr><th>Importo rimborso</th><td><span class="amount-preview">€ {{ "%.2f"|format(row.computed_amount_eur) }}</span></td></tr>
+                <tr><th>{{ _('Importo rimborso') }}</th><td><span class="amount-preview">€ {{ "%.2f"|format(row.computed_amount_eur) }}</span></td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<h4>Documenti caricati</h4>
+<h4>{{ _('Documenti caricati') }}</h4>
 {% if docs %}
 <ul class="list-group mb-3">
     {% for doc in docs %}
@@ -46,69 +46,69 @@
         <span><i class="bi bi-file-earmark-pdf"></i> {{ doc.doc_title }}</span>
         <a href="{{ url_for('pathtracks.download_doc', doc_id=doc.doc_id) }}"
            class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-download"></i> Scarica
+            <i class="bi bi-download"></i> {{ _('Scarica') }}
         </a>
     </li>
     {% endfor %}
 </ul>
 {% else %}
-<p class="text-muted">Nessun documento.</p>
+<p class="text-muted">{{ _('Nessun documento.') }}</p>
 {% endif %}
 
 {% if can_edit %}
 <div class="card mb-3">
-    <div class="card-header bg-light"><strong>Modifica bozza</strong></div>
+    <div class="card-header bg-light"><strong>{{ _('Modifica bozza') }}</strong></div>
     <div class="card-body">
         <form method="post" action="{{ url_for('pathtracks.update', path_track_id=row.path_track_id) }}"
               enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="mb-3">
-                <label class="form-label">Tipo rimborso</label>
+                <label class="form-label">{{ _('Tipo rimborso') }}</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="reimbursement_type"
                            id="rt-fuel-edit" value="CARBURANTE"
                            {% if row.reimbursement_type == "CARBURANTE" %}checked{% endif %}>
-                    <label class="form-check-label" for="rt-fuel-edit">Carburante</label>
+                    <label class="form-check-label" for="rt-fuel-edit">{{ _('Carburante') }}</label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="reimbursement_type"
                            id="rt-taxi-edit" value="TAXI"
                            {% if row.reimbursement_type == "TAXI" %}checked{% endif %}>
-                    <label class="form-check-label" for="rt-taxi-edit">Taxi</label>
+                    <label class="form-check-label" for="rt-taxi-edit">{{ _('Taxi') }}</label>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Numero viaggi (A/R)</label>
+                <label class="form-label">{{ _('Numero viaggi (A/R)') }}</label>
                 <input type="number" class="form-control" name="number_of_trips"
                        min="1" max="31" required value="{{ row.number_of_trips }}">
             </div>
 
             <div id="taxi-section-edit" style="display:{% if row.reimbursement_type == 'TAXI' %}block{% else %}none{% endif %};">
-                <label class="form-label">Importi ricevute (€)</label>
+                <label class="form-label">{{ _('Importi ricevute (€)') }}</label>
                 <div id="taxi-amounts-list-edit">
                     <input type="number" class="form-control mb-2" name="taxi_amount"
                            step="0.01" min="0" placeholder="es. 12.50">
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-secondary mb-3"
-                        id="add-taxi-amount-edit">+ Aggiungi ricevuta</button>
+                        id="add-taxi-amount-edit">{{ _('+ Aggiungi ricevuta') }}</button>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Foglio di percorso (PDF, sostituisce il precedente)</label>
+                <label class="form-label">{{ _('Foglio di percorso (PDF, max 5 MB)') }}</label>
                 <input type="file" class="form-control" name="sheet_pdf"
                        accept="application/pdf" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Ricevute (PDF, sostituiscono le precedenti)</label>
+                <label class="form-label">{{ _('Ricevute (PDF, max 5 MB ciascuna)') }}</label>
                 <input type="file" class="form-control" name="receipt_pdf"
                        accept="application/pdf" multiple required>
             </div>
 
             <button type="submit" class="btn btn-outline-primary">
-                <i class="bi bi-save"></i> Aggiorna bozza
+                <i class="bi bi-save"></i> {{ _('Aggiorna bozza') }}
             </button>
         </form>
     </div>
@@ -120,15 +120,15 @@
           class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-primary"
-                onclick="return confirm('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.');">
-            <i class="bi bi-send-check"></i> Conferma e invia
+                onclick="return confirm('{{ _('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.') }}');">
+            <i class="bi bi-send-check"></i> {{ _('Conferma e invia') }}
         </button>
     </form>
     {% else %}
     <button type="button" class="btn btn-primary" disabled
-            title="Invio possibile solo dal 1 al 5 del mese successivo.">
-        <i class="bi bi-send-check"></i> Conferma e invia
-        <small>(dal 1 al 5 del mese successivo)</small>
+            title="{{ _('Invio possibile solo dal 1 al 5 del mese successivo.') }}">
+        <i class="bi bi-send-check"></i> {{ _('Conferma e invia') }}
+        <small>({{ _('dal 1 al 5 del mese successivo') }})</small>
     </button>
     {% if row.status == "DRAFT" and (session.function_code or 0) > 60 %}
     <form method="post" action="{{ url_for('pathtracks.submit', path_track_id=row.path_track_id) }}"
@@ -136,8 +136,8 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="force" value="1">
         <button type="submit" class="btn btn-warning"
-                onclick="return confirm('Invio admin in override scadenza. Confermi?');">
-            <i class="bi bi-shield-check"></i> Invia (override admin)
+                onclick="return confirm('{{ _('Invio admin in override scadenza. Confermi?') }}');">
+            <i class="bi bi-shield-check"></i> {{ _('Invia (override admin)') }}
         </button>
     </form>
     {% endif %}
@@ -147,8 +147,8 @@
           class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline-danger"
-                onclick="return confirm('Cancellare la bozza?');">
-            <i class="bi bi-trash"></i> Cancella bozza
+                onclick="return confirm('{{ _('Cancellare la bozza?') }}');">
+            <i class="bi bi-trash"></i> {{ _('Cancella bozza') }}
         </button>
     </form>
 </div>
@@ -187,15 +187,15 @@
 <p class="text-muted">
     <em>
         {% if row.status == "SUBMITTED" %}
-        Dichiarazione gia' inviata: nessuna modifica possibile.
+        {{ _("Dichiarazione gia' inviata: nessuna modifica possibile.") }}
         {% else %}
-        Periodo di modifica chiuso.
+        {{ _('Periodo di modifica chiuso.') }}
         {% endif %}
     </em>
 </p>
 {% endif %}
 
 <a href="{{ url_for('pathtracks.list_mine') }}" class="btn btn-link mt-2">
-    <i class="bi bi-arrow-left"></i> Torna alla lista
+    <i class="bi bi-arrow-left"></i> {{ _('Torna alla lista') }}
 </a>
 {% endblock %}

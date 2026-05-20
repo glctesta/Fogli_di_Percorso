@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Accesso negato{% endblock %}
+{% block title %}{{ _('Accesso negato') }}{% endblock %}
 {% block content %}
 <div class="alert alert-warning">
-    <h3>Accesso negato</h3>
-    <p>Non hai i permessi per accedere a questa pagina.</p>
-    <a class="btn btn-primary" href="{{ url_for('dashboard.index') }}">Torna alla home</a>
+    <h3>{{ _('Accesso negato') }}</h3>
+    <p>{{ _('Non hai i permessi per accedere a questa pagina.') }}</p>
+    <a class="btn btn-primary" href="{{ url_for('dashboard.index') }}">{{ _('Torna alla home') }}</a>
 </div>
 {% endblock %}

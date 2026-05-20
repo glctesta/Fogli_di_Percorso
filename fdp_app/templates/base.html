@@ -27,24 +27,24 @@
             {% if session.get('user_id') %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#fdpNav" aria-controls="fdpNav"
-                    aria-expanded="false" aria-label="Menu di navigazione">
+                    aria-expanded="false" aria-label="{{ _('Menu di navigazione') }}">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="fdpNav">
                 <ul class="navbar-nav me-auto ms-3">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard.index') }}">
-                            <i class="bi bi-house-door"></i> Home
+                            <i class="bi bi-house-door"></i> {{ _('Home') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('coordinates.index') }}">
-                            <i class="bi bi-geo-alt"></i> Punto di partenza
+                            <i class="bi bi-geo-alt"></i> {{ _('Punto di partenza') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('pathtracks.list_mine') }}">
-                            <i class="bi bi-receipt"></i> Dichiarazioni
+                            <i class="bi bi-receipt"></i> {{ _('Dichiarazioni') }}
                         </a>
                     </li>
                 </ul>
@@ -55,8 +55,8 @@
                     </span>
                     <form action="{{ url_for('auth.logout') }}" method="post" class="d-inline m-0">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-outline-light btn-sm" aria-label="Logout">
-                            <i class="bi bi-box-arrow-right"></i> Esci
+                        <button type="submit" class="btn btn-outline-light btn-sm" aria-label="{{ _('Esci dall\'applicazione') }}">
+                            <i class="bi bi-box-arrow-right"></i> {{ _('Esci') }}
                         </button>
                     </form>
                 </div>
@@ -70,7 +70,7 @@
             {% for category, msg in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                     {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Chiudi"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ _('Chiudi') }}"></button>
                 </div>
             {% endfor %}
         {% endwith %}
@@ -81,7 +81,7 @@
         <div class="container text-center text-muted small">
             <img src="{{ url_for('static', filename='img/logo.png') }}"
                  alt="" class="footer-logo me-2">
-            Fogli di Percorso &middot; gestione rimborsi carburante e taxi
+            Fogli di Percorso &middot; {{ _('gestione rimborsi carburante e taxi') }}
         </div>
     </footer>
 
