@@ -10,7 +10,7 @@ from flask import Flask, render_template
 
 from config.settings import Settings
 from fdp_app.db import Database
-from fdp_app.extensions import csrf
+from fdp_app.extensions import csrf, babel
 
 
 def create_app(*, settings: type[Settings] | None = None,
@@ -34,6 +34,18 @@ def create_app(*, settings: type[Settings] | None = None,
 
     csrf.init_app(app)
 
+    def _select_locale():
+        from flask import request
+        cookie_lang = request.cookies.get(settings.LANGUAGE_COOKIE_NAME)
+        if cookie_lang in settings.LANGUAGES:
+            return cookie_lang
+        browser_lang = request.accept_languages.best_match(settings.LANGUAGES)
+        if browser_lang:
+            return browser_lang
+        return settings.BABEL_DEFAULT_LOCALE
+
+    babel.init_app(app, locale_selector=_select_locale)
+
     _warn_if_missing_secret_key(app)
     _configure_logging(app)
     _register_error_handlers(app)
@@ -41,6 +53,22 @@ def create_app(*, settings: type[Settings] | None = None,
 
     from fdp_app.db import teardown_request_db
     app.teardown_appcontext(teardown_request_db)
+
+    @app.route("/lang/<code>", methods=["POST"])
+    def set_language(code):
+        from flask import redirect, request, make_response
+        if code not in settings.LANGUAGES:
+            return ("Invalid language", 400)
+        next_url = request.form.get("next") or request.referrer or "/"
+        resp = make_response(redirect(next_url))
+        resp.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME,
+            code,
+            max_age=settings.LANGUAGE_COOKIE_MAX_AGE,
+            samesite="Lax",
+            httponly=False,
+        )
+        return resp
 
     return app
 

@@ -56,3 +56,10 @@ class Settings:
     MAX_CONTENT_LENGTH: int = (
         UPLOAD_MAX_BYTES * (UPLOAD_MAX_FILES_PER_PATHTRACK + 1)
     )
+
+    # i18n / Babel
+    LANGUAGES: tuple = ("ro", "it", "en")
+    BABEL_DEFAULT_LOCALE: str = "ro"
+    BABEL_DEFAULT_TIMEZONE: str = "Europe/Rome"
+    LANGUAGE_COOKIE_NAME: str = "fdp_lang"
+    LANGUAGE_COOKIE_MAX_AGE: int = 365 * 24 * 3600

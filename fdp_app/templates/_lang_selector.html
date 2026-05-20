@@ -1,0 +1,27 @@
+{% set current = (request.cookies.get('fdp_lang') or 'ro') %}
+<div class="dropdown me-2">
+    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false"
+            aria-label="Lingua">
+        {% if current == 'ro' %}&#127479;&#127476; RO
+        {% elif current == 'en' %}&#127468;&#127463; EN
+        {% else %}&#127470;&#127481; IT{% endif %}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        {% for code, flag, label in [
+            ('ro', '&#127479;&#127476;', 'Romana'),
+            ('it', '&#127470;&#127481;', 'Italiano'),
+            ('en', '&#127468;&#127463;', 'English'),
+        ] %}
+        <li>
+            <form action="{{ url_for('set_language', code=code) }}" method="post" class="m-0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button type="submit" class="dropdown-item {% if current == code %}active{% endif %}">
+                    {{ flag|safe }} {{ label }}
+                </button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
