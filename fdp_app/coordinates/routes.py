@@ -5,6 +5,7 @@ from flask import (
     Blueprint, current_app, flash, redirect, render_template, request,
     session, url_for,
 )
+from flask_babel import _
 
 from fdp_app.auth.decorators import login_required
 from fdp_app.admin.helpers import resolve_target_employee
@@ -56,16 +57,16 @@ def create():
         lat = float(request.form.get("lat") or "")
         lon = float(request.form.get("lon") or "")
     except ValueError:
-        flash("Coordinate non valide.", "danger")
+        flash(_("Coordinate non valide."), "danger")
         return _redirect_to_index()
 
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-        flash("Coordinate non valide (lat/lon fuori range).", "danger")
+        flash(_("Coordinate non valide (lat/lon fuori range)."), "danger")
         return _redirect_to_index()
 
     label = (request.form.get("label") or "").strip()
     if not label:
-        flash("Etichetta obbligatoria.", "danger")
+        flash(_("Etichetta obbligatoria."), "danger")
         return _redirect_to_index()
     if len(label) > 200:
         label = label[:200]
@@ -83,10 +84,10 @@ def create():
             "Coordinate created: user_id=%s coord_id=%s",
             session["user_id"], new_id,
         )
-        flash("Punto di partenza salvato.", "success")
+        flash(_("Punto di partenza salvato."), "success")
     except ActiveCoordinateAlreadyExists:
         flash(
-            "Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo.",
+            _("Esiste gia' un punto attivo. Cancellarlo prima di crearne uno nuovo."),
             "danger",
         )
     except RoutingError as e:
@@ -94,7 +95,7 @@ def create():
             "Routing failure for user_id=%s: %s", session["user_id"], e,
         )
         flash(
-            "Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi.",
+            _("Servizio mappe temporaneamente non disponibile. Riprovare piu' tardi."),
             "danger",
         )
 
@@ -107,7 +108,7 @@ def delete():
     try:
         coordinate_id = int(request.form.get("coordinate_id") or "")
     except ValueError:
-        flash("Identificativo punto non valido.", "danger")
+        flash(_("Identificativo punto non valido."), "danger")
         return _redirect_to_index()
 
     target_id, _ib, _t = resolve_target_employee(session["user_id"])
@@ -121,7 +122,7 @@ def delete():
             "Coordinate deleted: user_id=%s coord_id=%s",
             session["user_id"], coordinate_id,
         )
-        flash("Punto di partenza cancellato.", "success")
+        flash(_("Punto di partenza cancellato."), "success")
     else:
-        flash("Punto non trovato o non posseduto.", "warning")
+        flash(_("Punto non trovato o non posseduto."), "warning")
     return _redirect_to_index()

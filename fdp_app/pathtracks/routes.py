@@ -9,6 +9,8 @@ from flask import (
     session, url_for, Response,
 )
 
+from flask_babel import _
+
 from fdp_app.auth.decorators import login_required
 from fdp_app.admin.helpers import resolve_target_employee
 from fdp_app.db import get_request_db
@@ -63,23 +65,23 @@ def _parse_pdf_uploads(max_bytes, max_files):
     receipt_files = request.files.getlist("receipt_pdf")
 
     if not sheet_file or not sheet_file.filename:
-        return None, None, "Foglio di percorso (PDF) obbligatorio."
+        return None, None, _("Foglio di percorso (PDF) obbligatorio.")
     sheet_bytes = sheet_file.read()
     if len(sheet_bytes) > max_bytes:
-        return None, None, "Foglio di percorso troppo grande (max 5 MB)."
+        return None, None, _("Foglio di percorso troppo grande (max 5 MB).")
     if not sheet_bytes.startswith(b"%PDF-"):
-        return None, None, "Il foglio di percorso non e' un PDF valido."
+        return None, None, _("Il foglio di percorso non e' un PDF valido.")
 
     receipts = []
     for f in receipt_files:
         if f and f.filename:
             data = f.read()
             if len(data) > max_bytes:
-                return None, None, f"Ricevuta '{f.filename}' troppo grande (max 5 MB)."
+                return None, None, _("Ricevuta '%(filename)s' troppo grande (max 5 MB).", filename=f.filename)
             receipts.append(data)
 
     if not receipts:
-        return None, None, "Almeno una ricevuta (PDF) obbligatoria."
+        return None, None, _("Almeno una ricevuta (PDF) obbligatoria.")
 
     if len(receipts) + 1 > max_files:
         return None, None, f"Troppi file caricati (max {max_files})."
@@ -105,7 +107,7 @@ def new():
     coord_repo = CoordinateRepo(current_app.config["_db"])
     coord = coord_repo.find_active(target_id)
     if coord is None:
-        flash("Definisci prima il punto di partenza nella mappa.", "warning")
+        flash(_("Definisci prima il punto di partenza nella mappa."), "warning")
         if in_behalf_of:
             return redirect(url_for("coordinates.index", on_behalf_of=in_behalf_of))
         return redirect(url_for("coordinates.index"))
@@ -122,11 +124,7 @@ def new():
         target_month = today.replace(day=1)
 
     if not can_create_draft_for(target_month):
-        flash(
-            f"Periodo di inserimento per {_MONTH_NAMES_IT[target_month.month]} "
-            f"{target_month.year} non aperto.",
-            "danger",
-        )
+        flash(_("Periodo di inserimento chiuso."), "danger")
         return redirect(url_for("pathtracks.list_mine"))
 
     pathtrack_repo = PathTrackRepo(current_app.config["_db"])
@@ -163,7 +161,7 @@ def create():
 
     action = (request.form.get("action") or "draft").strip().lower()
     if action not in ("draft", "submit"):
-        flash("Azione non riconosciuta.", "danger")
+        flash(_("Azione non riconosciuta."), "danger")
         return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("pathtracks.new"))
 
@@ -174,14 +172,14 @@ def create():
 
     reimbursement_type = (request.form.get("reimbursement_type") or "").strip().upper()
     if reimbursement_type not in ("CARBURANTE", "TAXI"):
-        flash("Tipo rimborso non valido.", "danger")
+        flash(_("Tipo rimborso non valido."), "danger")
         return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("pathtracks.new"))
 
     try:
         number_of_trips = int(request.form.get("number_of_trips") or "")
     except ValueError:
-        flash("Numero viaggi non valido.", "danger")
+        flash(_("Numero viaggi non valido."), "danger")
         return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("pathtracks.new"))
 
@@ -209,7 +207,7 @@ def create():
         else:
             taxi_amounts = _parse_taxi_amounts()
             if taxi_amounts is None:
-                flash("Importi ricevute non validi.", "danger")
+                flash(_("Importi ricevute non validi."), "danger")
                 return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                                 else url_for("pathtracks.new"))
             new_id = service.create_draft_taxi(
@@ -239,30 +237,29 @@ def create():
                     session["user_id"], new_id, registry_id,
                 )
                 flash(
-                    f"Dichiarazione inviata con successo. RegistryId: {registry_id}",
+                    _("Dichiarazione inviata con successo. RegistryId: %(rid)s", rid=registry_id),
                     "success",
                 )
             except DeadlineClosedError as e:
                 flash(
-                    f"Bozza salvata ma non inviata: {e}. Potrai inviarla dal 1 al 5 "
-                    "del mese successivo.",
+                    _("Bozza salvata ma non inviata: %(error)s. Potrai inviarla dal 1 al 5 del mese successivo.", error=e),
                     "warning",
                 )
         else:
-            flash("Bozza salvata. La potrai aggiornare fino al 5 del mese successivo.", "success")
+            flash(_("Bozza salvata. La potrai aggiornare fino al 5 del mese successivo."), "success")
 
         return redirect(url_for("pathtracks.view", path_track_id=new_id))
     except NoActiveCoordinateError:
-        flash("Definisci prima il punto di partenza nella mappa.", "warning")
+        flash(_("Definisci prima il punto di partenza nella mappa."), "warning")
         return redirect(url_for("coordinates.index", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("coordinates.index"))
     except NoRateConfiguredError:
         current_app.logger.error("No rate configured for %s", target_month)
-        flash("Rate non configurato per il mese. Contattare l'amministratore.", "danger")
+        flash(_("Rate non configurato per il mese. Contattare l'amministratore."), "danger")
         return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("pathtracks.new"))
     except DuplicateDeclarationError:
-        flash("Esiste gia' una dichiarazione attiva per il mese.", "warning")
+        flash(_("Esiste gia' una dichiarazione attiva per il mese."), "warning")
         return redirect(url_for("pathtracks.new", on_behalf_of=in_behalf_of) if in_behalf_of
                         else url_for("pathtracks.new"))
     except DeadlineClosedError as e:
@@ -316,7 +313,7 @@ def update(path_track_id: int):
     try:
         number_of_trips = int(request.form.get("number_of_trips") or "")
     except ValueError:
-        flash("Numero viaggi non valido.", "danger")
+        flash(_("Numero viaggi non valido."), "danger")
         return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
 
     reimbursement_type = (request.form.get("reimbursement_type") or "").strip().upper()
@@ -343,7 +340,7 @@ def update(path_track_id: int):
         elif reimbursement_type == "TAXI":
             taxi_amounts = _parse_taxi_amounts()
             if taxi_amounts is None:
-                flash("Importi ricevute non validi.", "danger")
+                flash(_("Importi ricevute non validi."), "danger")
                 return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
             service.update_draft_taxi(
                 path_track_id=path_track_id,
@@ -354,14 +351,14 @@ def update(path_track_id: int):
                 receipt_pdfs=receipt_bytes_list,
             )
         else:
-            flash("Tipo rimborso non valido.", "danger")
+            flash(_("Tipo rimborso non valido."), "danger")
             return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
 
         current_app.logger.info(
             "PathTrack DRAFT updated: user_id=%s id=%s",
             session["user_id"], path_track_id,
         )
-        flash("Bozza aggiornata.", "success")
+        flash(_("Bozza aggiornata."), "success")
     except NotADraftError as e:
         flash(str(e), "warning")
     except DeadlineClosedError as e:
@@ -396,8 +393,7 @@ def submit(path_track_id: int):
             action_log, session["user_id"], path_track_id, registry_id,
         )
         flash(
-            f"Dichiarazione inviata con successo. RegistryId: {registry_id}"
-            + (" (override admin)" if force else ""),
+            _("Dichiarazione inviata con successo. RegistryId: %(rid)s", rid=registry_id),
             "success",
         )
     except NotADraftError as e:
@@ -421,7 +417,7 @@ def delete(path_track_id: int):
         abort(404)
 
     if row.status != "DRAFT":
-        flash("Solo le bozze possono essere cancellate.", "warning")
+        flash(_("Solo le bozze possono essere cancellate."), "warning")
         return redirect(url_for("pathtracks.view", path_track_id=path_track_id))
 
     ok = pathtrack_repo.soft_delete(
@@ -435,9 +431,9 @@ def delete(path_track_id: int):
             "PathTrack DRAFT deleted: user_id=%s id=%s",
             session["user_id"], path_track_id,
         )
-        flash("Bozza cancellata.", "success")
+        flash(_("Bozza cancellata."), "success")
     else:
-        flash("Impossibile cancellare (non e' una bozza o gia' cancellata).", "warning")
+        flash(_("Impossibile cancellare (non e' una bozza o gia' cancellata)."), "warning")
     return redirect(url_for("pathtracks.list_mine"))
 
 

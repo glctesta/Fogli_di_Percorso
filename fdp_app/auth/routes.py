@@ -5,6 +5,7 @@ from flask import (
     Blueprint, current_app, flash, redirect, render_template, request,
     session, url_for,
 )
+from flask_babel import _
 
 from fdp_app.auth.rate_limit import LoginRateLimiter
 from fdp_app.auth.service import AuthService
@@ -37,7 +38,7 @@ def login():
 
     rl = _get_rate_limiter()
     if rl.is_blocked(nome_user):
-        flash("Troppi tentativi falliti, riprovare piu' tardi.", "danger")
+        flash(_("Troppi tentativi falliti, riprovare piu' tardi."), "danger")
         return render_template("auth/login.html"), 200
 
     db = current_app.config["_db"]
@@ -48,7 +49,7 @@ def login():
     ctx = service.authenticate(nome_user, password)
     if ctx is None:
         rl.register_failure(nome_user)
-        flash("Credenziali non valide.", "danger")
+        flash(_("Credenziali non valide."), "danger")
         current_app.logger.info("Login failed for %s", nome_user)
         return render_template("auth/login.html"), 200
 
