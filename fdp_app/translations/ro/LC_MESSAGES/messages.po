@@ -19,6 +19,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: fdp_app/admin/routes.py:113
+msgid "Valore tasso non valido."
+msgstr "Valoare tarif invalid."
+
+#: fdp_app/admin/routes.py:117
+msgid "Tasso deve essere positivo."
+msgstr "Tariful trebuie sa fie pozitiv."
+
+#: fdp_app/admin/routes.py:123
+msgid "Data 'valido da' non valida."
+msgstr "Data 'valabil de la' invalida."
+
+#: fdp_app/admin/routes.py:129
+msgid "Data 'valido fino a' non valida."
+msgstr "Data 'valabil pana la' invalida."
+
+#: fdp_app/admin/routes.py:144
+#, python-format
+msgid "Tasso standard inserito (rate=%(rate).4f)."
+msgstr "Tarif standard inserat (curs=%(rate).4f)."
+
+#: fdp_app/pathtracks/routes.py
+msgid "Tasso di cambio BNR non disponibile al momento dell'invio; il campo RON sara' vuoto."
+msgstr "Cursul BNR nu este disponibil la momentul trimiterii; campul RON va fi gol."
+
 #: fdp_app/auth/routes.py:41
 msgid "Troppi tentativi falliti, riprovare piu' tardi."
 msgstr "Prea multe incercari esuate, reincearca mai tarziu."

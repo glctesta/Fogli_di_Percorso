@@ -203,13 +203,14 @@ def test_submit_happy_path():
     repos["registry"].generate.return_value = 500
     repos["pathtrack"].mark_as_submitted.return_value = True
 
-    registry_id = svc.submit(
+    registry_id, bnr_resolved = svc.submit(
         path_track_id=100,
         employee_hire_history_id=10,
         full_name="Rossi Mario",
     )
 
     assert registry_id == 500
+    assert bnr_resolved is True  # no currency service injected -> True
     repos["registry"].generate.assert_called_once_with(issued_by_full_name="Rossi Mario")
     repos["pathtrack"].mark_as_submitted.assert_called_once_with(
         path_track_id=100, employee_hire_history_id=10, registry_id=500, bnr_rate=None,
@@ -273,7 +274,7 @@ def test_submit_with_force_bypasses_deadline_check():
     repos["pathtrack"].mark_as_submitted.return_value = True
 
     # Senza force fallirebbe (siamo fuori finestra), con force=True passa
-    registry_id = svc.submit(
+    registry_id, bnr_resolved = svc.submit(
         path_track_id=100,
         employee_hire_history_id=10,
         full_name="Rossi Mario",
@@ -281,6 +282,7 @@ def test_submit_with_force_bypasses_deadline_check():
     )
 
     assert registry_id == 900
+    assert bnr_resolved is True  # no currency service injected -> True
     repos["registry"].generate.assert_called_once()
     repos["pathtrack"].mark_as_submitted.assert_called_once()
 
@@ -425,3 +427,73 @@ def test_submit_without_currency_service_passes_none():
 
     kwargs = repos["pathtrack"].mark_as_submitted.call_args.kwargs
     assert kwargs["bnr_rate"] is None
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_returns_bnr_resolved_true_when_rate_available():
+    repos = {
+        "coordinate": MagicMock(),
+        "rate": MagicMock(),
+        "registry": MagicMock(),
+        "pathtrack": MagicMock(),
+        "doc": MagicMock(),
+    }
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+    currency = MagicMock()
+    from fdp_app.pathtracks.currency import ResolvedRate
+    currency.resolve_for.return_value = ResolvedRate(
+        value_ron_per_eur=4.97, source="BNR", stale=False,
+    )
+    connection = MagicMock()
+    connection.autocommit = True
+    svc = PathTrackService(
+        coordinate_repo=repos["coordinate"], rate_repo=repos["rate"],
+        registry_repo=repos["registry"], pathtrack_repo=repos["pathtrack"],
+        doc_repo=repos["doc"], connection_factory=lambda: connection,
+        currency_service=currency,
+    )
+
+    registry_id, bnr_resolved = svc.submit(
+        path_track_id=100, employee_hire_history_id=10, full_name="x",
+    )
+
+    assert registry_id == 500
+    assert bnr_resolved is True
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_returns_bnr_resolved_false_when_rate_unavailable():
+    from fdp_app.pathtracks.currency import RateNotResolvableError
+    repos = {
+        "coordinate": MagicMock(),
+        "rate": MagicMock(),
+        "registry": MagicMock(),
+        "pathtrack": MagicMock(),
+        "doc": MagicMock(),
+    }
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+    currency = MagicMock()
+    currency.resolve_for.side_effect = RateNotResolvableError("down")
+    connection = MagicMock()
+    connection.autocommit = True
+    svc = PathTrackService(
+        coordinate_repo=repos["coordinate"], rate_repo=repos["rate"],
+        registry_repo=repos["registry"], pathtrack_repo=repos["pathtrack"],
+        doc_repo=repos["doc"], connection_factory=lambda: connection,
+        currency_service=currency,
+    )
+
+    registry_id, bnr_resolved = svc.submit(
+        path_track_id=100, employee_hire_history_id=10, full_name="x",
+    )
+
+    assert registry_id == 500
+    assert bnr_resolved is False

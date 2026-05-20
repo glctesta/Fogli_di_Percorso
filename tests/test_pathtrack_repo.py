@@ -273,3 +273,32 @@ def test_list_for_sub_cdc_uses_coalesce_for_in_behalf_of():
     repo.list_for_sub_cdc(sub_cdc_id=42)
     sql_text, *_ = cursor.execute.call_args[0]
     assert "COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)" in sql_text
+
+
+def test_insert_passes_thirteen_positional_params_to_match_sql_placeholders():
+    """Regression test for CRITICAL bug: SQL has 13 ? placeholders, insert()
+    must pass exactly 13 positional parameters to cursor.execute()."""
+    db, cursor = _make_db(fetchone=(42,))
+    repo = PathTrackRepo(db)
+    repo.insert(
+        employee_hire_history_id=10,
+        registry_id=None,
+        date_path_track=date(2026, 4, 1),
+        declarated_path_id=99,
+        in_behalf_of_id=None,
+        reimbursement_type="CARBURANTE",
+        number_of_trips=15,
+        road_km=10.5,
+        rate_id_used=3,
+        taxi_total_eur=None,
+        computed_amount_eur=53.55,
+    )
+    # cursor.execute(sql, *params); call_args has (sql, *params) in args
+    args = cursor.execute.call_args[0]
+    sql_text = args[0]
+    params = args[1:]
+    placeholder_count = sql_text.count("?")
+    assert placeholder_count == len(params), (
+        f"Mismatch: SQL has {placeholder_count} placeholders, "
+        f"but {len(params)} parameters were passed"
+    )

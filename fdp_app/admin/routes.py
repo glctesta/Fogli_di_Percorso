@@ -7,6 +7,7 @@ from flask import (
     Blueprint, Response, abort, current_app, flash, redirect, render_template,
     request, session, url_for,
 )
+from flask_babel import _
 from fdp_app.repos.doc_repo import PathTrackDocRepo
 
 from fdp_app.admin.service import build_xlsx
@@ -110,24 +111,24 @@ def bnr_rates_create():
     try:
         rate_value = float(request.form.get("rate_value") or "")
     except ValueError:
-        flash("Valore tasso non valido.", "danger")
+        flash(_("Valore tasso non valido."), "danger")
         return redirect(url_for("admin.bnr_rates"))
     if rate_value <= 0:
-        flash("Tasso deve essere positivo.", "danger")
+        flash(_("Tasso deve essere positivo."), "danger")
         return redirect(url_for("admin.bnr_rates"))
     valid_from_raw = request.form.get("valid_from") or ""
     valid_to_raw = request.form.get("valid_to") or ""
     try:
         valid_from = _date.fromisoformat(valid_from_raw)
     except ValueError:
-        flash("Data 'valido da' non valida.", "danger")
+        flash(_("Data 'valido da' non valida."), "danger")
         return redirect(url_for("admin.bnr_rates"))
     valid_to = None
     if valid_to_raw:
         try:
             valid_to = _date.fromisoformat(valid_to_raw)
         except ValueError:
-            flash("Data 'valido fino a' non valida.", "danger")
+            flash(_("Data 'valido fino a' non valida."), "danger")
             return redirect(url_for("admin.bnr_rates"))
     repo.insert(
         rate_value_ron_per_eur=rate_value,
@@ -141,7 +142,7 @@ def bnr_rates_create():
         "BNR standard rate inserted: user_id=%s rate=%s from=%s to=%s",
         session.get("user_id"), rate_value, valid_from, valid_to,
     )
-    flash(f"Tasso standard inserito (rate={rate_value:.4f}).", "success")
+    flash(_("Tasso standard inserito (rate=%(rate).4f).", rate=rate_value), "success")
     return redirect(url_for("admin.bnr_rates"))
 
 

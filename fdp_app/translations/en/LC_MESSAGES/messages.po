@@ -18,6 +18,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: fdp_app/admin/routes.py:113
+msgid "Valore tasso non valido."
+msgstr "Invalid rate value."
+
+#: fdp_app/admin/routes.py:117
+msgid "Tasso deve essere positivo."
+msgstr "Rate must be positive."
+
+#: fdp_app/admin/routes.py:123
+msgid "Data 'valido da' non valida."
+msgstr "Invalid 'valid from' date."
+
+#: fdp_app/admin/routes.py:129
+msgid "Data 'valido fino a' non valida."
+msgstr "Invalid 'valid to' date."
+
+#: fdp_app/admin/routes.py:144
+#, python-format
+msgid "Tasso standard inserito (rate=%(rate).4f)."
+msgstr "Standard rate inserted (rate=%(rate).4f)."
+
+#: fdp_app/pathtracks/routes.py
+msgid "Tasso di cambio BNR non disponibile al momento dell'invio; il campo RON sara' vuoto."
+msgstr "BNR exchange rate not available at submission time; the RON field will be empty."
+
 #: fdp_app/auth/routes.py:41
 msgid "Troppi tentativi falliti, riprovare piu' tardi."
 msgstr "Too many failed attempts, please try again later."

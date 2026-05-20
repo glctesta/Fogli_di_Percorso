@@ -235,19 +235,24 @@ def create():
 
         if action == "submit":
             try:
-                registry_id = service.submit(
+                registry_id, bnr_resolved = service.submit(
                     path_track_id=new_id,
                     employee_hire_history_id=session["user_id"],
                     full_name=session["full_name"],
                 )
                 current_app.logger.info(
-                    "PathTrack SUBMITTED: user_id=%s id=%s registry_id=%s",
-                    session["user_id"], new_id, registry_id,
+                    "PathTrack SUBMITTED: user_id=%s id=%s registry_id=%s bnr_resolved=%s",
+                    session["user_id"], new_id, registry_id, bnr_resolved,
                 )
                 flash(
                     _("Dichiarazione inviata con successo. RegistryId: %(rid)s", rid=registry_id),
                     "success",
                 )
+                if not bnr_resolved:
+                    flash(
+                        _("Tasso di cambio BNR non disponibile al momento dell'invio; il campo RON sara' vuoto."),
+                        "warning",
+                    )
             except DeadlineClosedError as e:
                 flash(
                     _("Bozza salvata ma non inviata: %(error)s. Potrai inviarla dal 1 al 5 del mese successivo.", error=e),
@@ -389,7 +394,7 @@ def submit(path_track_id: int):
 
     service = _build_service()
     try:
-        registry_id = service.submit(
+        registry_id, bnr_resolved = service.submit(
             path_track_id=path_track_id,
             employee_hire_history_id=session["user_id"],
             full_name=session["full_name"],
@@ -397,13 +402,19 @@ def submit(path_track_id: int):
         )
         action_log = "SUBMITTED (admin override)" if force else "SUBMITTED"
         current_app.logger.info(
-            "PathTrack %s: user_id=%s id=%s registry_id=%s",
-            action_log, session["user_id"], path_track_id, registry_id,
+            "PathTrack %s: user_id=%s id=%s registry_id=%s bnr_resolved=%s",
+            action_log, session["user_id"], path_track_id, registry_id, bnr_resolved,
         )
         flash(
-            _("Dichiarazione inviata con successo. RegistryId: %(rid)s", rid=registry_id),
+            _("Dichiarazione inviata con successo. RegistryId: %(rid)s", rid=registry_id)
+            + (" (override admin)" if force else ""),
             "success",
         )
+        if not bnr_resolved:
+            flash(
+                _("Tasso di cambio BNR non disponibile al momento dell'invio; il campo RON sara' vuoto."),
+                "warning",
+            )
     except NotADraftError as e:
         flash(str(e), "warning")
     except DeadlineClosedError as e:

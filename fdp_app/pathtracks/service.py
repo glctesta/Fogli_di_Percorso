@@ -438,15 +438,14 @@ class PathTrackService:
         employee_hire_history_id: int,
         full_name: str,
         force: bool = False,
-    ) -> int:
-        """Invia (conferma) una bozza. Chiama SP Registro e marca SUBMITTED.
+    ) -> tuple[int, bool]:
+        """Invia (conferma) una bozza. Ritorna (registry_id, bnr_rate_resolved)
+        dove bnr_rate_resolved=False indica che il tasso BNR e' stato NULL.
 
         Args:
             force: se True, salta il check `can_submit_for` (uso admin per
                    inviare bozze scadute oltre il 5 del mese successivo).
                    Il check di stato DRAFT e ownership rimangono attivi.
-
-        Ritorna il RegistryId assegnato.
         """
         row = self._pathtrack_repo.find_by_id(
             path_track_id=path_track_id,
@@ -464,6 +463,7 @@ class PathTrackService:
 
         # Try to fetch BNR rate (if currency service available)
         bnr_rate = None
+        bnr_resolved = True
         if self._currency_service is not None:
             try:
                 resolved = self._currency_service.resolve_for(
@@ -473,6 +473,9 @@ class PathTrackService:
             except RateNotResolvableError:
                 # Graceful degradation: submit proceeds with NULL rate
                 bnr_rate = None
+                bnr_resolved = False
+        # else: no currency service configured -> rate stays NULL but it's
+        # an intended scenario (e.g., legacy installs); bnr_resolved stays True.
 
         conn = self._connection_factory()
         prev_autocommit = getattr(conn, "autocommit", True)
@@ -488,7 +491,7 @@ class PathTrackService:
             if not ok:
                 raise NotADraftError("Submit fallito: stato cambiato durante la transazione")
             conn.commit()
-            return registry_id
+            return registry_id, bnr_resolved
         except Exception:
             conn.rollback()
             raise

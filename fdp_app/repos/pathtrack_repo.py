@@ -207,6 +207,9 @@ class PathTrackRepo(BaseRepo):
                number_of_trips, road_km, rate_id_used, taxi_total_eur,
                computed_amount_eur, status="DRAFT", submitted_on=None,
                bnr_rate=None):
+        # Note: bnr_rate is accepted for API symmetry but currently always
+        # NULL at insert time (it's set later by mark_as_submitted).
+        # Drafts have NULL rate; submit() updates it via mark_as_submitted.
         cursor = self._open_cursor()
         try:
             cursor.execute(
@@ -215,7 +218,6 @@ class PathTrackRepo(BaseRepo):
                 declarated_path_id, in_behalf_of_id, reimbursement_type,
                 number_of_trips, road_km, rate_id_used,
                 taxi_total_eur, computed_amount_eur, status, submitted_on,
-                bnr_rate,
             )
             row = cursor.fetchone()
             return int(row[0])
