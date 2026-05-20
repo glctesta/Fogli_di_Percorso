@@ -55,6 +55,21 @@ def mock_registry_repo():
         yield instance
 
 
+@pytest.fixture
+def mock_bnr_rate_repo():
+    from fdp_app.pathtracks.bnr_client import BnrRateUnavailable
+    with patch("fdp_app.pathtracks.routes.BnrRateRepo") as cls, \
+         patch("fdp_app.pathtracks.routes.BnrRateClient") as bnr_cls:
+        instance = MagicMock()
+        instance.find_standard_for.return_value = None
+        instance.find_latest_cached_for.return_value = None
+        cls.return_value = instance
+        bnr_instance = MagicMock()
+        bnr_instance.fetch_eur_to_ron.side_effect = BnrRateUnavailable("offline")
+        bnr_cls.return_value = bnr_instance
+        yield instance
+
+
 def _login(client, eh_id=10):
     with client.session_transaction() as sess:
         sess["user_id"] = eh_id
@@ -234,14 +249,20 @@ def test_post_new_save_and_submit_in_window(
 @freeze_time("2026-05-03 10:00:00+02:00")
 def test_post_submit_endpoint_marks_draft_as_submitted(
     client, mock_coord_repo, mock_rate_repo, mock_pathtrack_repo,
-    mock_doc_repo, mock_registry_repo
+    mock_doc_repo, mock_registry_repo, mock_bnr_rate_repo, app
 ):
+    from fdp_app.pathtracks.bnr_client import BnrRateUnavailable
     _login(client)
     mock_pathtrack_repo.find_by_id.return_value = _row(
         status="DRAFT", date_path_track=date(2026, 4, 1), path_track_id=100,
     )
     mock_registry_repo.generate.return_value = 800
     mock_pathtrack_repo.mark_as_submitted.return_value = True
+
+    # Make the app-level BnrRateClient unavailable so bnr_rate resolves to None
+    bnr_client_mock = MagicMock()
+    bnr_client_mock.fetch_eur_to_ron.side_effect = BnrRateUnavailable("offline")
+    app.config["_bnr_client"] = bnr_client_mock
 
     with patch("fdp_app.pathtracks.routes.get_request_db") as mock_get_db:
         conn = MagicMock()
@@ -253,7 +274,7 @@ def test_post_submit_endpoint_marks_draft_as_submitted(
     assert response.status_code == 302
     mock_registry_repo.generate.assert_called_once_with(issued_by_full_name="Rossi Mario")
     mock_pathtrack_repo.mark_as_submitted.assert_called_once_with(
-        path_track_id=100, employee_hire_history_id=10, registry_id=800,
+        path_track_id=100, employee_hire_history_id=10, registry_id=800, bnr_rate=None,
     )
 
 

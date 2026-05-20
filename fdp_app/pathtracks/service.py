@@ -17,6 +17,10 @@ from fdp_app.pathtracks.deadline import (
     can_create_draft_for,
     can_submit_for,
 )
+from fdp_app.pathtracks.currency import (
+    CurrencyService,
+    RateNotResolvableError,
+)
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 from fdp_app.repos.doc_repo import PathTrackDocRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
@@ -58,6 +62,7 @@ class PathTrackService:
         pathtrack_repo: PathTrackRepo,
         doc_repo: PathTrackDocRepo,
         connection_factory: Callable[[], object],
+        currency_service: Optional[CurrencyService] = None,
     ) -> None:
         self._coord_repo = coordinate_repo
         self._rate_repo = rate_repo
@@ -65,6 +70,7 @@ class PathTrackService:
         self._pathtrack_repo = pathtrack_repo
         self._doc_repo = doc_repo
         self._connection_factory = connection_factory
+        self._currency_service = currency_service
 
     # ---- shared validation -----------------------------------------------
 
@@ -456,6 +462,18 @@ class PathTrackService:
                 "(submit consentito solo dal 1 al 5 del mese successivo)"
             )
 
+        # Try to fetch BNR rate (if currency service available)
+        bnr_rate = None
+        if self._currency_service is not None:
+            try:
+                resolved = self._currency_service.resolve_for(
+                    date.today(), user_sys=full_name,
+                )
+                bnr_rate = resolved.value_ron_per_eur
+            except RateNotResolvableError:
+                # Graceful degradation: submit proceeds with NULL rate
+                bnr_rate = None
+
         conn = self._connection_factory()
         prev_autocommit = getattr(conn, "autocommit", True)
         try:
@@ -465,6 +483,7 @@ class PathTrackService:
                 path_track_id=path_track_id,
                 employee_hire_history_id=employee_hire_history_id,
                 registry_id=registry_id,
+                bnr_rate=bnr_rate,
             )
             if not ok:
                 raise NotADraftError("Submit fallito: stato cambiato durante la transazione")

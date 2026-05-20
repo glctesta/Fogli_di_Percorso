@@ -212,7 +212,7 @@ def test_submit_happy_path():
     assert registry_id == 500
     repos["registry"].generate.assert_called_once_with(issued_by_full_name="Rossi Mario")
     repos["pathtrack"].mark_as_submitted.assert_called_once_with(
-        path_track_id=100, employee_hire_history_id=10, registry_id=500,
+        path_track_id=100, employee_hire_history_id=10, registry_id=500, bnr_rate=None,
     )
     conn.commit.assert_called_once()
 
@@ -318,3 +318,110 @@ def test_submit_default_force_false_still_rejects_outside_window():
             employee_hire_history_id=10,
             full_name="x",
         )
+
+
+# ---- bnr_rate freeze on submit ----
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_calls_currency_service_and_passes_rate():
+    """submit() chiama CurrencyService.resolve_for e passa il rate a mark_as_submitted."""
+    repos = {
+        "coordinate": MagicMock(),
+        "rate": MagicMock(),
+        "registry": MagicMock(),
+        "pathtrack": MagicMock(),
+        "doc": MagicMock(),
+    }
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+    currency = MagicMock()
+    from fdp_app.pathtracks.currency import ResolvedRate
+    currency.resolve_for.return_value = ResolvedRate(
+        value_ron_per_eur=4.9756, source="BNR", stale=False,
+    )
+    connection = MagicMock()
+    connection.autocommit = True
+
+    svc = PathTrackService(
+        coordinate_repo=repos["coordinate"],
+        rate_repo=repos["rate"],
+        registry_repo=repos["registry"],
+        pathtrack_repo=repos["pathtrack"],
+        doc_repo=repos["doc"],
+        connection_factory=lambda: connection,
+        currency_service=currency,
+    )
+
+    svc.submit(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        full_name="Rossi Mario",
+    )
+
+    currency.resolve_for.assert_called_once()
+    kwargs = repos["pathtrack"].mark_as_submitted.call_args.kwargs
+    assert kwargs["bnr_rate"] == pytest.approx(4.9756)
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_with_unresolvable_rate_passes_none():
+    """Se CurrencyService.resolve_for raises, submit procede con bnr_rate=None."""
+    from fdp_app.pathtracks.currency import RateNotResolvableError
+    repos = {
+        "coordinate": MagicMock(),
+        "rate": MagicMock(),
+        "registry": MagicMock(),
+        "pathtrack": MagicMock(),
+        "doc": MagicMock(),
+    }
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+    currency = MagicMock()
+    currency.resolve_for.side_effect = RateNotResolvableError("down")
+    connection = MagicMock()
+    connection.autocommit = True
+
+    svc = PathTrackService(
+        coordinate_repo=repos["coordinate"],
+        rate_repo=repos["rate"],
+        registry_repo=repos["registry"],
+        pathtrack_repo=repos["pathtrack"],
+        doc_repo=repos["doc"],
+        connection_factory=lambda: connection,
+        currency_service=currency,
+    )
+
+    svc.submit(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        full_name="Rossi Mario",
+    )
+
+    kwargs = repos["pathtrack"].mark_as_submitted.call_args.kwargs
+    assert kwargs["bnr_rate"] is None
+
+
+@freeze_time("2026-05-03 10:00:00+02:00")
+def test_submit_without_currency_service_passes_none():
+    """Backward-compat: if no CurrencyService injected, bnr_rate=None."""
+    svc, repos, conn = _make_service()  # _make_service does NOT inject currency
+    repos["pathtrack"].find_by_id.return_value = _row(
+        status="DRAFT", date_path_track=date(2026, 4, 1),
+    )
+    repos["registry"].generate.return_value = 500
+    repos["pathtrack"].mark_as_submitted.return_value = True
+
+    svc.submit(
+        path_track_id=100,
+        employee_hire_history_id=10,
+        full_name="x",
+    )
+
+    kwargs = repos["pathtrack"].mark_as_submitted.call_args.kwargs
+    assert kwargs["bnr_rate"] is None

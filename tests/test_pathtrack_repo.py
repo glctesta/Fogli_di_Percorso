@@ -34,7 +34,7 @@ def test_find_active_for_month_returns_row_with_status():
     db, _ = _make_db(fetchone=(
         100, None, date(2026, 4, 1), 99, None,
         "CARBURANTE", 15, 10.5, 3, None, 53.55,
-        "DRAFT", None,
+        "DRAFT", None, None,
     ))
     repo = PathTrackRepo(db)
 
@@ -55,7 +55,7 @@ def test_find_active_for_month_returns_submitted_row():
     db, _ = _make_db(fetchone=(
         100, 500, date(2026, 4, 1), 99, None,
         "CARBURANTE", 15, 10.5, 3, None, 53.55,
-        "SUBMITTED", submitted_dt,
+        "SUBMITTED", submitted_dt, None,
     ))
     repo = PathTrackRepo(db)
 
@@ -176,11 +176,12 @@ def test_mark_as_submitted_sets_status_and_registry():
 
     assert ok is True
     sql_text, *params = cursor.execute.call_args[0]
-    assert "Status      = 'SUBMITTED'" in sql_text or "Status = 'SUBMITTED'" in sql_text
-    assert "SubmittedOn = GETDATE()" in sql_text
+    assert "Status" in sql_text and "'SUBMITTED'" in sql_text
+    assert "GETDATE()" in sql_text
     assert "Status = 'DRAFT'" in sql_text  # the WHERE clause guards against double-submit
-    # Params: registry_id, path_track_id, employee_hire_history_id
-    assert params == [500, 100, 10]
+    assert "BnrRateRonPerEur" in sql_text
+    # Params: registry_id, bnr_rate, path_track_id, employee_hire_history_id
+    assert params == [500, None, 100, 10]
 
 
 def test_mark_as_submitted_returns_false_when_not_draft():
@@ -215,8 +216,8 @@ def test_soft_delete_returns_false_when_no_draft_match():
 
 def test_list_for_employee_returns_rows_with_status():
     db, cursor = _make_db(fetchall=[
-        (1, None, date(2026, 4, 1), 99, None, "CARBURANTE", 15, 10.5, 3, None, 53.55, "DRAFT", None),
-        (2, 600, date(2026, 3, 1), 99, None, "TAXI", 10, 8.0, None, 45.0, 45.0, "SUBMITTED", datetime(2026, 4, 5, 12, 0)),
+        (1, None, date(2026, 4, 1), 99, None, "CARBURANTE", 15, 10.5, 3, None, 53.55, "DRAFT", None, None),
+        (2, 600, date(2026, 3, 1), 99, None, "TAXI", 10, 8.0, None, 45.0, 45.0, "SUBMITTED", datetime(2026, 4, 5, 12, 0), None),
     ])
     repo = PathTrackRepo(db)
 
@@ -231,8 +232,8 @@ def test_list_for_employee_returns_rows_with_status():
 
 def test_list_for_sub_cdc_no_filters():
     db, cursor = _make_db(fetchall=[
-        (1, None, date(2026, 5, 1), 99, None, "CARBURANTE", 15, 10.5, 3, None, 53.55, "DRAFT", None, "Bianchi", "Luigi"),
-        (2, 600, date(2026, 4, 1), 99, None, "TAXI", 10, 8.0, None, 45.0, 45.0, "SUBMITTED", datetime(2026, 5, 5), "Verdi", "Maria"),
+        (1, None, date(2026, 5, 1), 99, None, "CARBURANTE", 15, 10.5, 3, None, 53.55, "DRAFT", None, None, "Bianchi", "Luigi"),
+        (2, 600, date(2026, 4, 1), 99, None, "TAXI", 10, 8.0, None, 45.0, 45.0, "SUBMITTED", datetime(2026, 5, 5), None, "Verdi", "Maria"),
     ])
     repo = PathTrackRepo(db)
     result = repo.list_for_sub_cdc(sub_cdc_id=42)

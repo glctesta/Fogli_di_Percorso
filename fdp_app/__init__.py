@@ -32,6 +32,9 @@ def create_app(*, settings: type[Settings] | None = None,
     )
     app.config["_workplace"] = settings.workplace()
 
+    from fdp_app.pathtracks.bnr_client import BnrRateClient
+    app.config["_bnr_client"] = BnrRateClient()
+
     csrf.init_app(app)
 
     def _select_locale():

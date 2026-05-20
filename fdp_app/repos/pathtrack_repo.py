@@ -12,7 +12,7 @@ _QUERY_FIND_FOR_MONTH = """
 SELECT TOP 1
     PathTrackId, RegistryId, DatePathTrack, DeclaratedPathId, InBehalfOfId,
     ReimbursementType, NumberOfTrips, RoadKm, RateIdUsed, TaxiTotalEur,
-    ComputedAmountEur, Status, SubmittedOn
+    ComputedAmountEur, Status, SubmittedOn, BnrRateRonPerEur
 FROM Employee.fdp.PathTracks
 WHERE EmployeeHireHistoryId = ?
   AND DatePathTrack = ?
@@ -23,7 +23,7 @@ _QUERY_FIND_BY_ID = """
 SELECT TOP 1
     PathTrackId, RegistryId, DatePathTrack, DeclaratedPathId, InBehalfOfId,
     ReimbursementType, NumberOfTrips, RoadKm, RateIdUsed, TaxiTotalEur,
-    ComputedAmountEur, Status, SubmittedOn
+    ComputedAmountEur, Status, SubmittedOn, BnrRateRonPerEur
 FROM Employee.fdp.PathTracks
 WHERE PathTrackId = ?
   AND EmployeeHireHistoryId = ?
@@ -34,7 +34,8 @@ _QUERY_FIND_BY_ID_IN_SUB_CDC = """
 SELECT TOP 1
     pt.PathTrackId, pt.RegistryId, pt.DatePathTrack, pt.DeclaratedPathId,
     pt.InBehalfOfId, pt.ReimbursementType, pt.NumberOfTrips, pt.RoadKm,
-    pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn
+    pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn,
+    pt.BnrRateRonPerEur
 FROM Employee.fdp.PathTracks pt
 JOIN Employee.dbo.EmployeeHireHistory h
      ON h.EmployeeHireHistoryId = COALESCE(pt.InBehalfOfId, pt.EmployeeHireHistoryId)
@@ -50,10 +51,10 @@ _QUERY_INSERT = """
 INSERT INTO Employee.fdp.PathTracks
     (EmployeeHireHistoryId, RegistryId, DatePathTrack, DeclaratedPathId,
      InBehalfOfId, ReimbursementType, NumberOfTrips, RoadKm, RateIdUsed,
-     TaxiTotalEur, ComputedAmountEur, Status, SubmittedOn,
+     TaxiTotalEur, ComputedAmountEur, Status, SubmittedOn, BnrRateRonPerEur,
      DateOut, ReceivedOn, DateSys)
 OUTPUT INSERTED.PathTrackId
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL,
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL,
         NULL, NULL, GETDATE())
 """
 
@@ -73,9 +74,10 @@ WHERE PathTrackId = ?
 
 _QUERY_MARK_SUBMITTED = """
 UPDATE Employee.fdp.PathTracks
-SET Status      = 'SUBMITTED',
-    SubmittedOn = GETDATE(),
-    RegistryId  = ?
+SET Status            = 'SUBMITTED',
+    SubmittedOn       = GETDATE(),
+    RegistryId        = ?,
+    BnrRateRonPerEur  = ?
 WHERE PathTrackId = ?
   AND EmployeeHireHistoryId = ?
   AND Status = 'DRAFT'
@@ -95,7 +97,7 @@ _QUERY_LIST = """
 SELECT
     PathTrackId, RegistryId, DatePathTrack, DeclaratedPathId, InBehalfOfId,
     ReimbursementType, NumberOfTrips, RoadKm, RateIdUsed, TaxiTotalEur,
-    ComputedAmountEur, Status, SubmittedOn
+    ComputedAmountEur, Status, SubmittedOn, BnrRateRonPerEur
 FROM Employee.fdp.PathTracks
 WHERE EmployeeHireHistoryId = ?
   AND DateOut IS NULL
@@ -107,6 +109,7 @@ SELECT
     pt.PathTrackId, pt.RegistryId, pt.DatePathTrack, pt.DeclaratedPathId,
     pt.InBehalfOfId, pt.ReimbursementType, pt.NumberOfTrips, pt.RoadKm,
     pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn,
+    pt.BnrRateRonPerEur,
     e.EmployeeSurname, e.EmployeeName
 FROM Employee.fdp.PathTracks pt
 JOIN Employee.dbo.EmployeeHireHistory h
@@ -137,6 +140,7 @@ class PathTrackRow:
     computed_amount_eur: float
     status: str
     submitted_on: Optional[datetime]
+    bnr_rate_ron_per_eur: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -166,6 +170,7 @@ def _row_to_obj(row) -> PathTrackRow:
         computed_amount_eur=float(row[10]),
         status=row[11].rstrip() if isinstance(row[11], str) else row[11],
         submitted_on=row[12],
+        bnr_rate_ron_per_eur=float(row[13]) if len(row) > 13 and row[13] is not None else None,
     )
 
 
@@ -200,7 +205,8 @@ class PathTrackRepo(BaseRepo):
     def insert(self, *, employee_hire_history_id, registry_id, date_path_track,
                declarated_path_id, in_behalf_of_id, reimbursement_type,
                number_of_trips, road_km, rate_id_used, taxi_total_eur,
-               computed_amount_eur, status="DRAFT", submitted_on=None):
+               computed_amount_eur, status="DRAFT", submitted_on=None,
+               bnr_rate=None):
         cursor = self._open_cursor()
         try:
             cursor.execute(
@@ -209,6 +215,7 @@ class PathTrackRepo(BaseRepo):
                 declarated_path_id, in_behalf_of_id, reimbursement_type,
                 number_of_trips, road_km, rate_id_used,
                 taxi_total_eur, computed_amount_eur, status, submitted_on,
+                bnr_rate,
             )
             row = cursor.fetchone()
             return int(row[0])
@@ -230,12 +237,13 @@ class PathTrackRepo(BaseRepo):
         finally:
             cursor.close()
 
-    def mark_as_submitted(self, *, path_track_id, employee_hire_history_id, registry_id):
+    def mark_as_submitted(self, *, path_track_id, employee_hire_history_id,
+                          registry_id, bnr_rate=None):
         cursor = self._open_cursor()
         try:
             cursor.execute(
                 _QUERY_MARK_SUBMITTED,
-                registry_id, path_track_id, employee_hire_history_id,
+                registry_id, bnr_rate, path_track_id, employee_hire_history_id,
             )
             return cursor.rowcount > 0
         finally:
@@ -308,10 +316,11 @@ class PathTrackRepo(BaseRepo):
                 computed_amount_eur=float(r[10]),
                 status=r[11].rstrip() if isinstance(r[11], str) else r[11],
                 submitted_on=r[12],
+                bnr_rate_ron_per_eur=float(r[13]) if r[13] is not None else None,
             )
             result.append(PathTrackWithEmployee(
                 row=ptrow,
-                employee_surname=r[13],
-                employee_name=r[14],
+                employee_surname=r[14],
+                employee_name=r[15],
             ))
         return result

@@ -28,6 +28,9 @@ from fdp_app.pathtracks.service import (
     NotADraftError,
     PathTrackService,
 )
+from fdp_app.pathtracks.bnr_client import BnrRateClient
+from fdp_app.pathtracks.currency import CurrencyService
+from fdp_app.repos.bnr_rate_repo import BnrRateRepo
 from fdp_app.repos.coordinate_repo import CoordinateRepo
 from fdp_app.repos.doc_repo import PathTrackDocRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
@@ -44,6 +47,7 @@ _MONTH_NAMES_IT = [
 
 def _build_service() -> PathTrackService:
     db = current_app.config["_db"]
+    bnr_client = current_app.config.get("_bnr_client") or BnrRateClient()
     return PathTrackService(
         coordinate_repo=CoordinateRepo(db),
         rate_repo=RateRepo(db),
@@ -51,6 +55,10 @@ def _build_service() -> PathTrackService:
         pathtrack_repo=PathTrackRepo(db),
         doc_repo=PathTrackDocRepo(db),
         connection_factory=get_request_db,
+        currency_service=CurrencyService(
+            bnr_repo=BnrRateRepo(db),
+            bnr_client=bnr_client,
+        ),
     )
 
 
