@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Tassi BNR EUR-RON') }} - Fogli di Percorso{% endblock %}
+{% block content %}
+<h2><i class="bi bi-currency-exchange"></i> {{ _('Tassi BNR EUR-RON') }}</h2>
+
+<p class="text-muted">
+    {{ _('Gestisci i tassi di cambio EUR->RON. I tassi STANDARD vengono usati come prima scelta. In assenza di standard, il sistema scarica live da BNR.ro o cursbnr.ro al momento del submit.') }}
+</p>
+
+<h4 class="mt-4">{{ _('Inserisci nuovo tasso standard') }}</h4>
+<form method="post" action="{{ url_for('admin.bnr_rates_create') }}" class="row g-2 mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Tasso (RON per 1 EUR)') }}</label>
+        <input type="number" name="rate_value" class="form-control"
+               step="0.0001" min="0.0001" required placeholder="4.9756">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Valido da') }}</label>
+        <input type="date" name="valid_from" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Valido fino a (opzionale)') }}</label>
+        <input type="date" name="valid_to" class="form-control">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-circle"></i> {{ _('Salva tasso') }}
+        </button>
+    </div>
+</form>
+
+<h4>{{ _('Tassi STANDARD attivi') }}</h4>
+{% if standards %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>{{ _('Tasso') }}</th>
+            <th>{{ _('Valido da') }}</th>
+            <th>{{ _('Valido fino a') }}</th>
+            <th>{{ _('Inserito da') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in standards %}
+        <tr>
+            <td><strong>{{ "%.4f"|format(r.rate_value_ron_per_eur) }}</strong></td>
+            <td>{{ r.valid_from.isoformat() }}</td>
+            <td>{{ r.valid_to.isoformat() if r.valid_to else _('aperto') }}</td>
+            <td>{{ r.user_sys }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    {{ _('Nessun tasso STANDARD configurato. Il sistema usera\' BNR.ro live ad ogni submit.') }}
+</div>
+{% endif %}
+
+<h4 class="mt-4">{{ _('Ultimi tassi acquisiti (live + cache)') }}</h4>
+{% if recent %}
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>{{ _('Tasso') }}</th>
+            <th>{{ _('Fonte') }}</th>
+            <th>{{ _('Data') }}</th>
+            <th>{{ _('Standard?') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in recent %}
+        <tr>
+            <td>{{ "%.4f"|format(r.rate_value_ron_per_eur) }}</td>
+            <td><span class="badge bg-secondary">{{ r.source }}</span></td>
+            <td>{{ r.valid_from.isoformat() }}</td>
+            <td>{% if r.is_standard %}<i class="bi bi-check-circle text-success"></i>{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    {{ _('Nessun tasso ancora acquisito. Il primo submit attivera\' il fetch live.') }}
+</div>
+{% endif %}
+
+<a href="{{ url_for('admin.representable') }}" class="btn btn-link">
+    <i class="bi bi-arrow-left"></i> {{ _('Torna all\'area admin') }}
+</a>
+{% endblock %}

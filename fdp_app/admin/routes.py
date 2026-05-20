@@ -1,13 +1,17 @@
 """Route amministrative (rappresentanza colleghi + storico + export)."""
 from __future__ import annotations
 
+from datetime import date as _date, datetime as _datetime
+
 from flask import (
-    Blueprint, Response, abort, current_app, render_template, request, session,
+    Blueprint, Response, abort, current_app, flash, redirect, render_template,
+    request, session, url_for,
 )
 from fdp_app.repos.doc_repo import PathTrackDocRepo
 
 from fdp_app.admin.service import build_xlsx
 from fdp_app.auth.decorators import admin_required, login_required
+from fdp_app.repos.bnr_rate_repo import BnrRateRepo
 from fdp_app.repos.employee_repo import EmployeeRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
 
@@ -80,6 +84,65 @@ def view_pathtrack(path_track_id: int):
         docs=docs,
         month_label=_MONTH_NAMES_IT[row.date_path_track.month],
     )
+
+
+@bp.route("/bnr-rates", methods=["GET"])
+@login_required
+@admin_required
+def bnr_rates():
+    db = current_app.config["_db"]
+    repo = BnrRateRepo(db)
+    standards = repo.list_standards()
+    recent = repo.list_recent(limit=20)
+    return render_template(
+        "admin/bnr_rates.html",
+        standards=standards,
+        recent=recent,
+    )
+
+
+@bp.route("/bnr-rates", methods=["POST"])
+@login_required
+@admin_required
+def bnr_rates_create():
+    db = current_app.config["_db"]
+    repo = BnrRateRepo(db)
+    try:
+        rate_value = float(request.form.get("rate_value") or "")
+    except ValueError:
+        flash("Valore tasso non valido.", "danger")
+        return redirect(url_for("admin.bnr_rates"))
+    if rate_value <= 0:
+        flash("Tasso deve essere positivo.", "danger")
+        return redirect(url_for("admin.bnr_rates"))
+    valid_from_raw = request.form.get("valid_from") or ""
+    valid_to_raw = request.form.get("valid_to") or ""
+    try:
+        valid_from = _date.fromisoformat(valid_from_raw)
+    except ValueError:
+        flash("Data 'valido da' non valida.", "danger")
+        return redirect(url_for("admin.bnr_rates"))
+    valid_to = None
+    if valid_to_raw:
+        try:
+            valid_to = _date.fromisoformat(valid_to_raw)
+        except ValueError:
+            flash("Data 'valido fino a' non valida.", "danger")
+            return redirect(url_for("admin.bnr_rates"))
+    repo.insert(
+        rate_value_ron_per_eur=rate_value,
+        source="STANDARD",
+        valid_from=valid_from,
+        valid_to=valid_to,
+        is_standard=True,
+        user_sys=session.get("full_name") or "admin",
+    )
+    current_app.logger.info(
+        "BNR standard rate inserted: user_id=%s rate=%s from=%s to=%s",
+        session.get("user_id"), rate_value, valid_from, valid_to,
+    )
+    flash(f"Tasso standard inserito (rate={rate_value:.4f}).", "success")
+    return redirect(url_for("admin.bnr_rates"))
 
 
 @bp.route("/export", methods=["GET"])
