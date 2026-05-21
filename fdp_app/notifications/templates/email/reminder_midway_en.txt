@@ -1,0 +1,15 @@
+Subject: Reminder - path tracking sheet {{ month_name }} {{ year }}
+
+Hello {{ full_name }},
+
+This is a reminder that only a few days remain to submit the monthly
+path tracking sheet for {{ month_name }} {{ year }}.
+
+If you have not done so yet, please log in to the internal portal
+and complete your declaration:
+  {{ app_url }}/pathtracks/new
+
+The deadline is {{ next_month_name }} 5, {{ next_year }} at 23:59.
+
+Best regards,
+Fogli di Percorso system

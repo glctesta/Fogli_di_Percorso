@@ -1,0 +1,14 @@
+Subject: Foglio di percorso - {{ month_name }} {{ year }}
+
+Buongiorno {{ full_name }},
+
+E' iniziato il periodo di invio del foglio di percorso mensile
+per {{ month_name }} {{ year }}.
+
+Ti chiediamo di accedere al portale interno e compilare la tua dichiarazione:
+  {{ app_url }}/pathtracks/new
+
+Il termine ultimo e' il 5 {{ next_month_name }} {{ next_year }} alle ore 23:59.
+
+Cordialmente,
+Sistema Fogli di Percorso

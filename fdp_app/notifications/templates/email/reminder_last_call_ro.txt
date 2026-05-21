@@ -1,0 +1,16 @@
+Subject: URGENT - Ultima zi pentru fisa de {{ month_name }} {{ year }}
+
+Buna ziua {{ full_name }},
+
+ATENTIE: Astazi este ULTIMA ZI pentru a trimite fisa lunara
+pentru {{ month_name }} {{ year }}.
+
+Pana la ora 23:59 trebuie sa intri pe:
+  {{ app_url }}/pathtracks/new
+
+Dupa miezul noptii nu mai vei putea trimite.
+
+Daca ai deja completat ciorna, asigura-te ca apesi "Confirma si trimite".
+
+Multumesc,
+Sistemul Fogli de drum

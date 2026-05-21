@@ -1,0 +1,15 @@
+Subject: Promemoria - foglio di percorso {{ month_name }} {{ year }}
+
+Buongiorno {{ full_name }},
+
+Ti ricordiamo che mancano solo pochi giorni per inviare il foglio
+di percorso mensile per {{ month_name }} {{ year }}.
+
+Se non lo hai ancora fatto, ti chiediamo di accedere al portale interno
+e compilare la tua dichiarazione:
+  {{ app_url }}/pathtracks/new
+
+Il termine ultimo e' il 5 {{ next_month_name }} {{ next_year }} alle ore 23:59.
+
+Cordialmente,
+Sistema Fogli di Percorso

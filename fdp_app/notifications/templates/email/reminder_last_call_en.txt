@@ -1,0 +1,16 @@
+Subject: URGENT - Last day for the {{ month_name }} {{ year }} sheet
+
+Hello {{ full_name }},
+
+ATTENTION: today is the LAST DAY to submit the monthly path tracking
+sheet for {{ month_name }} {{ year }}.
+
+By 23:59 you must log in to:
+  {{ app_url }}/pathtracks/new
+
+After midnight submission will no longer be possible.
+
+If you have already filled in the draft, make sure to press "Confirm and submit".
+
+Best regards,
+Fogli di Percorso system

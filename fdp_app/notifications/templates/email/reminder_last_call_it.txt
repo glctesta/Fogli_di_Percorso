@@ -1,0 +1,16 @@
+Subject: URGENTE - Ultimo giorno per il foglio di {{ month_name }} {{ year }}
+
+Buongiorno {{ full_name }},
+
+ATTENZIONE: oggi e' l'ULTIMO GIORNO per inviare il foglio di percorso
+mensile per {{ month_name }} {{ year }}.
+
+Entro le ore 23:59 devi accedere a:
+  {{ app_url }}/pathtracks/new
+
+Dopo la mezzanotte non sara' piu' possibile inviare.
+
+Se hai gia' compilato la bozza, assicurati di premere "Conferma e invia".
+
+Cordialmente,
+Sistema Fogli di Percorso

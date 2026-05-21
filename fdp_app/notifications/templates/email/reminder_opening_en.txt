@@ -1,0 +1,14 @@
+Subject: Path tracking sheet - {{ month_name }} {{ year }}
+
+Hello {{ full_name }},
+
+The submission period for the monthly path tracking sheet
+for {{ month_name }} {{ year }} has started.
+
+Please log in to the internal portal and complete your declaration:
+  {{ app_url }}/pathtracks/new
+
+The deadline is {{ next_month_name }} 5, {{ next_year }} at 23:59.
+
+Best regards,
+Fogli di Percorso system

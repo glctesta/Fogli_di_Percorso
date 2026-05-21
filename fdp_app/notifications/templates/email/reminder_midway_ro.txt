@@ -1,0 +1,15 @@
+Subject: Reamintire - fisa de drum {{ month_name }} {{ year }}
+
+Buna ziua {{ full_name }},
+
+Iti reamintim ca mai sunt doar cateva zile pentru a trimite fisa lunara
+pentru {{ month_name }} {{ year }}.
+
+Daca nu ai facut-o deja, te rugam sa intri pe portalul intern si sa
+completezi declaratia ta:
+  {{ app_url }}/pathtracks/new
+
+Termenul ultim este data de 5 {{ next_month_name }} {{ next_year }} ora 23:59.
+
+Multumesc,
+Sistemul Fogli de drum
