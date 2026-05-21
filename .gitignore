@@ -27,5 +27,8 @@ email_credentials.enc
 .vscode/
 .idea/
 
+# Deployment build artifacts
+dist/
+
 # Plans / specs ARE committed
 !docs/
