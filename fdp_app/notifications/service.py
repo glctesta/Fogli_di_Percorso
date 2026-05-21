@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import json
+import os
 import logging
 from datetime import date
 from pathlib import Path
 from typing import Tuple
 
 from dateutil.relativedelta import relativedelta
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateError
 
 from fdp_app.pathtracks.deadline import previous_month_first_day
 from fdp_app.repos.employee_repo import EmployeeRepo
@@ -35,9 +36,11 @@ class EmailReminderService:
     `state/reminders-{YYYY-MM-DD}-{stage}.done` contenente il riassunto JSON.
     """
 
-    def __init__(self, app, default_lang: str = "ro") -> None:
+    def __init__(self, app, default_lang: str = "ro",
+                 email_sender: "EmailSender | None" = None) -> None:
         self._app = app
         self._default_lang = default_lang
+        self._email_sender = email_sender
         self._state_dir = Path(app.root_path).parent / "state"
         self._state_dir.mkdir(exist_ok=True)
         self._jinja = Environment(
@@ -55,9 +58,10 @@ class EmailReminderService:
         return self._state_file(stage).exists()
 
     def _mark_sent(self, stage: str, summary: dict) -> None:
-        self._state_file(stage).write_text(
-            json.dumps(summary, indent=2), encoding="utf-8"
-        )
+        target = self._state_file(stage)
+        tmp = target.with_suffix(target.suffix + ".tmp")
+        tmp.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        os.replace(tmp, target)
 
     def run_stage(self, stage: str) -> Tuple[int, int]:
         """Esegue lo stage. Ritorna `(sent, skipped)`.
@@ -89,11 +93,11 @@ class EmailReminderService:
         template_name = f"reminder_{stage.replace('-', '_')}_{lang}.txt"
         try:
             template = self._jinja.get_template(template_name)
-        except Exception as e:
-            _logger.error("Template %s non trovato: %s", template_name, e)
+        except TemplateError as e:
+            _logger.error("Template %s non valido: %s", template_name, e)
             raise
 
-        sender = EmailSender()
+        sender = self._email_sender or EmailSender()
         sent_count = 0
         skipped_count = 0
         results = []
@@ -110,9 +114,13 @@ class EmailReminderService:
                     next_year=next_month.year,
                     app_url=app_url,
                 )
-                lines = rendered.strip().split("\n")
-                subject = lines[0].replace("Subject:", "").strip()
-                body = "\n".join(lines[2:]).strip()
+                header, _, body_text = rendered.strip().partition("\n\n")
+                if not header.lower().startswith("subject:"):
+                    raise ValueError(
+                        f"Template {template_name}: la prima riga deve iniziare con 'Subject:'"
+                    )
+                subject = header.split(":", 1)[1].strip()
+                body = body_text.strip()
                 sender.send_email(emp.work_email, subject, body, is_html=False)
                 sent_count += 1
                 results.append({
@@ -128,10 +136,10 @@ class EmailReminderService:
                     "employee_id": emp.employee_hire_history_id,
                     "email": emp.work_email,
                     "status": "error",
-                    "error": str(e),
+                    "error": f"{type(e).__name__}: {e}",
                 })
-                _logger.error("Reminder %s fallito per %s: %s",
-                              stage, emp.full_name, e)
+                _logger.exception("Reminder %s fallito per %s",
+                                  stage, emp.full_name)
 
         self._mark_sent(stage, {
             "sent": sent_count,
