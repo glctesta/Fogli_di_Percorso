@@ -9,6 +9,7 @@ sullo schema `fdp`.
 1. `001_init.sql` — ALTER tabelle esistenti + CREATE `PathTrackReimbursementRates` + INDICI
 2. `002_add_status.sql` — workflow DRAFT/SUBMITTED (aggiunge `Status` e `SubmittedOn` a `PathTracks`)
 3. `004_create_bnrrates.sql` — tabella `BnrRates` (tassi EUR->RON) + colonna `BnrRateRonPerEur` su `PathTracks`
+4. `005_fix_bnrrates_schema.sql` — fix typo `Ratesid`→`RateId` e aggiunta colonna `DateSys` (solo se la tabella era stata creata manualmente con schema diverso da 004)
 
 Gli script sono idempotenti: si possono rieseguire senza danni.
 
