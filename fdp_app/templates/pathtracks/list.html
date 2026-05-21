@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Le mie dichiarazioni') }} - Fogli di Percorso{% endblock %}
 {% block content %}
+<h1 class="visually-hidden">{{ _('Le mie dichiarazioni') }}</h1>
 <h2><i class="bi bi-receipt"></i> {{ _('Le mie dichiarazioni') }}</h2>
 
 <a href="{{ url_for('pathtracks.new') }}" class="btn btn-primary mb-3">
@@ -8,6 +9,7 @@
 </a>
 
 {% if rows %}
+<div class="table-responsive">
 <table class="table table-striped">
     <thead>
         <tr>
@@ -43,6 +45,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
 <div class="alert alert-info">{{ _('Nessuna dichiarazione presente.') }}</div>
 {% endif %}

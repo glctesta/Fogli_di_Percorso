@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Tassi BNR EUR-RON') }} - Fogli di Percorso{% endblock %}
 {% block content %}
+<h1 class="visually-hidden">{{ _('Gestione tassi BNR EUR-RON') }}</h1>
 <h2><i class="bi bi-currency-exchange"></i> {{ _('Tassi BNR EUR-RON') }}</h2>
 
 <p class="text-muted">
@@ -32,6 +33,7 @@
 
 <h4>{{ _('Tassi STANDARD attivi') }}</h4>
 {% if standards %}
+<div class="table-responsive">
 <table class="table table-striped">
     <thead>
         <tr>
@@ -52,6 +54,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
 <div class="alert alert-info">
     {{ _('Nessun tasso STANDARD configurato. Il sistema usera\' BNR.ro live ad ogni submit.') }}
@@ -60,6 +63,7 @@
 
 <h4 class="mt-4">{{ _('Ultimi tassi acquisiti (live + cache)') }}</h4>
 {% if recent %}
+<div class="table-responsive">
 <table class="table table-sm">
     <thead>
         <tr>
@@ -80,6 +84,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
 <div class="alert alert-info">
     {{ _('Nessun tasso ancora acquisito. Il primo submit attivera\' il fetch live.') }}

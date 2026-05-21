@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Errore interno') }}{% endblock %}
 {% block content %}
+<h1 class="visually-hidden">{{ _('Errore interno del server') }}</h1>
 <div class="alert alert-danger">
     <h3>{{ _('Errore interno del server') }}</h3>
     <p>{{ _("Si e' verificato un errore imprevisto. L'amministratore e' stato informato.") }}</p>
