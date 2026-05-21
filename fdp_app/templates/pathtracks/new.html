@@ -86,7 +86,7 @@
 
     {% if can_submit_now %}
     <button type="submit" name="action" value="submit" class="btn btn-primary"
-            onclick="return confirm('{{ _('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.') }}');">
+            data-confirm="{{ _('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.') }}">
         <i class="bi bi-send-check"></i> {{ _('Salva e invia') }}
     </button>
     {% else %}

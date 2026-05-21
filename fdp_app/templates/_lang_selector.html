@@ -1,11 +1,15 @@
 {% set current = (request.cookies.get('fdp_lang') or 'ro') %}
+{% set lang_aria = {'ro': 'Romana', 'it': 'Italiano', 'en': 'English'} %}
 <div class="dropdown me-2">
     <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
             data-bs-toggle="dropdown" aria-expanded="false"
-            aria-label="Lingua">
-        {% if current == 'ro' %}&#127479;&#127476; RO
-        {% elif current == 'en' %}&#127468;&#127463; EN
-        {% else %}&#127470;&#127481; IT{% endif %}
+            aria-label="{{ _('Cambia lingua. Lingua attuale: %(lang)s', lang=lang_aria.get(current, 'Romana')) }}">
+        <span aria-hidden="true">
+            {% if current == 'ro' %}&#127479;&#127476;
+            {% elif current == 'en' %}&#127468;&#127463;
+            {% else %}&#127470;&#127481;{% endif %}
+        </span>
+        <span class="ms-1">{{ current|upper }}</span>
     </button>
     <ul class="dropdown-menu dropdown-menu-end">
         {% for code, flag, label in [
@@ -17,8 +21,13 @@
             <form action="{{ url_for('set_language', code=code) }}" method="post" class="m-0">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path }}">
-                <button type="submit" class="dropdown-item {% if current == code %}active{% endif %}">
-                    {{ flag|safe }} {{ label }}
+                <button type="submit"
+                        class="dropdown-item {% if current == code %}active{% endif %}"
+                        aria-label="{{ label }}"
+                        {% if current == code %}aria-current="true"{% endif %}>
+                    <span aria-hidden="true">{{ flag|safe }}</span>
+                    <span class="ms-1">{{ code|upper }}</span>
+                    <span class="text-muted ms-2">{{ label }}</span>
                 </button>
             </form>
         </li>

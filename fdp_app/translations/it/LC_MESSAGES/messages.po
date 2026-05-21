@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-21 08:57+0300\n"
+"POT-Creation-Date: 2026-05-21 09:16+0300\n"
 "PO-Revision-Date: 2026-05-20 11:54+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: it\n"
@@ -178,40 +178,61 @@ msgstr "Bozza cancellata."
 msgid "Impossibile cancellare (non e' una bozza o gia' cancellata)."
 msgstr "Impossibile cancellare (non e' una bozza o gia' cancellata)."
 
-#: fdp_app/templates/base.html:30
+#: fdp_app/templates/_lang_selector.html:6
+#, python-format
+msgid "Cambia lingua. Lingua attuale: %(lang)s"
+msgstr "Cambia lingua. Lingua attuale: %(lang)s"
+
+#: fdp_app/templates/base.html:22
+msgid "Salta al contenuto"
+msgstr "Salta al contenuto"
+
+#: fdp_app/templates/base.html:40
 msgid "Menu di navigazione"
 msgstr "Menu di navigazione"
 
-#: fdp_app/templates/base.html:37 fdp_app/templates/dashboard/index.html:2
+#: fdp_app/templates/base.html:47 fdp_app/templates/dashboard/index.html:2
 msgid "Home"
 msgstr "Home"
 
-#: fdp_app/templates/base.html:42 fdp_app/templates/coordinates/index.html:2
+#: fdp_app/templates/base.html:52 fdp_app/templates/coordinates/index.html:2
 #: fdp_app/templates/coordinates/index.html:8
 #: fdp_app/templates/coordinates/index.html:9
 #: fdp_app/templates/dashboard/index.html:25
 msgid "Punto di partenza"
 msgstr "Punto di partenza"
 
-#: fdp_app/templates/base.html:47 fdp_app/templates/dashboard/index.html:41
+#: fdp_app/templates/base.html:57 fdp_app/templates/dashboard/index.html:41
 msgid "Dichiarazioni"
 msgstr "Dichiarazioni"
 
-#: fdp_app/templates/base.html:58
+#: fdp_app/templates/base.html:68
 msgid "Esci dall'applicazione"
 msgstr "Esci dall'applicazione"
 
-#: fdp_app/templates/base.html:59
+#: fdp_app/templates/base.html:69
 msgid "Esci"
 msgstr "Esci"
 
-#: fdp_app/templates/base.html:73
+#: fdp_app/templates/base.html:83 fdp_app/templates/base.html:112
 msgid "Chiudi"
 msgstr "Chiudi"
 
-#: fdp_app/templates/auth/login.html:11 fdp_app/templates/base.html:84
+#: fdp_app/templates/auth/login.html:11 fdp_app/templates/base.html:94
 msgid "gestione rimborsi carburante e taxi"
 msgstr "gestione rimborsi carburante e taxi"
+
+#: fdp_app/templates/base.html:109 fdp_app/templates/base.html:122
+msgid "Conferma"
+msgstr "Conferma"
+
+#: fdp_app/templates/base.html:115
+msgid "Confermi questa operazione?"
+msgstr "Confermi questa operazione?"
+
+#: fdp_app/templates/base.html:119 fdp_app/templates/pathtracks/new.html:100
+msgid "Annulla"
+msgstr "Annulla"
 
 #: fdp_app/templates/admin/bnr_rates.html:2
 #: fdp_app/templates/admin/bnr_rates.html:5
@@ -716,10 +737,6 @@ msgstr "L'invio sara' possibile solo dal 1 al 5 del mese successivo."
 #: fdp_app/templates/pathtracks/new.html:96
 msgid "disponibile dal 1 al 5 del mese successivo"
 msgstr "disponibile dal 1 al 5 del mese successivo"
-
-#: fdp_app/templates/pathtracks/new.html:100
-msgid "Annulla"
-msgstr "Annulla"
 
 #: fdp_app/templates/pathtracks/view.html:4
 msgid "Dettagli dichiarazione"

@@ -36,7 +36,7 @@
             {% if on_behalf_of %}<input type="hidden" name="on_behalf_of" value="{{ on_behalf_of }}">{% endif %}
             <input type="hidden" name="coordinate_id" value="{{ active.coordinate_id }}">
             <button type="submit" class="btn btn-outline-danger btn-sm"
-                    onclick="return confirm('{{ _('Cancellare il punto di partenza?') }}');">
+                    data-confirm="{{ _('Cancellare il punto di partenza?') }}">
                 {{ _('Cancella punto') }}
             </button>
         </form>

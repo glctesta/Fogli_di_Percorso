@@ -125,7 +125,7 @@
           class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-primary"
-                onclick="return confirm('{{ _('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.') }}');">
+                data-confirm="{{ _('Confermi l\'invio definitivo? Dopo l\'invio non potrai più modificare.') }}">
             <i class="bi bi-send-check"></i> {{ _('Conferma e invia') }}
         </button>
     </form>
@@ -141,7 +141,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="force" value="1">
         <button type="submit" class="btn btn-warning"
-                onclick="return confirm('{{ _('Invio admin in override scadenza. Confermi?') }}');">
+                data-confirm="{{ _('Invio admin in override scadenza. Confermi?') }}">
             <i class="bi bi-shield-check"></i> {{ _('Invia (override admin)') }}
         </button>
     </form>
@@ -152,7 +152,7 @@
           class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline-danger"
-                onclick="return confirm('{{ _('Cancellare la bozza?') }}');">
+                data-confirm="{{ _('Cancellare la bozza?') }}">
             <i class="bi bi-trash"></i> {{ _('Cancella bozza') }}
         </button>
     </form>

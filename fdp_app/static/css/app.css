@@ -168,6 +168,12 @@ a:hover {
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
     overflow: hidden;
 }
+@media (max-width: 768px) {
+    .map-container { height: 360px; }
+}
+@media (max-width: 480px) {
+    .map-container { height: 280px; }
+}
 
 /* Alerts ---------------------------------------------------- */
 .alert {
