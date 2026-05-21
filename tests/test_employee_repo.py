@@ -113,3 +113,48 @@ def test_find_representable_for_passes_correct_params_to_query():
     assert "s.SubCdcId = ?" in sql_text
     assert "f.FunctionCode < ?" in sql_text
     assert params == [42, 60]
+
+
+def test_find_pending_for_month_returns_empty_when_no_match():
+    from datetime import date
+    db = _make_db_with_rows([])
+    repo = EmployeeRepo(db)
+    result = repo.find_pending_for_month(
+        date_path_track=date(2026, 4, 1), min_function_code=60,
+    )
+    assert result == []
+
+
+def test_find_pending_for_month_returns_employees_without_submitted():
+    from datetime import date
+    rows = [
+        (101, "Bianchi", "Luigi", "lbianchi@example.com"),
+        (102, "Verdi", "Maria", "mverdi@example.com"),
+    ]
+    db = _make_db_with_rows(rows)
+    repo = EmployeeRepo(db)
+    result = repo.find_pending_for_month(date_path_track=date(2026, 4, 1))
+    assert len(result) == 2
+    from fdp_app.repos.employee_repo import PendingEmployee
+    assert isinstance(result[0], PendingEmployee)
+    assert result[0].full_name == "Bianchi Luigi"
+    assert result[0].work_email == "lbianchi@example.com"
+
+
+def test_find_pending_for_month_uses_correct_query_predicates():
+    from datetime import date
+    db = _make_db_with_rows([])
+    repo = EmployeeRepo(db)
+    repo.find_pending_for_month(
+        date_path_track=date(2026, 4, 1), min_function_code=60,
+    )
+    cursor = db.cursor.return_value
+    args, _ = cursor.execute.call_args
+    sql_text, *params = args
+    assert "f.FunctionCode > ?" in sql_text
+    assert "WorkEmail IS NOT NULL" in sql_text
+    assert "Status = 'SUBMITTED'" in sql_text
+    assert "NOT EXISTS" in sql_text
+    # COALESCE-like check: in OR clause
+    assert "InBehalfOfId = h.EmployeeHireHistoryId" in sql_text
+    assert params == [60, date(2026, 4, 1)]
