@@ -18,6 +18,12 @@ from fdp_app.repos.pathtrack_repo import PathTrackRepo
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
+# Cap on the number of history rows returned to admins in a single page or
+# export. Enforced at the SQL layer via TOP (?). When the cap is hit, the
+# template shows a warning banner and the XLSX export gets a -truncated
+# filename suffix plus an in-sheet banner row.
+MAX_HISTORY_ROWS = 500
+
 _MONTH_NAMES_IT = [
     "", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
     "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
@@ -56,12 +62,18 @@ def history():
         year=year,
         month=month,
         reimbursement_type=reimbursement_type,
+        limit=MAX_HISTORY_ROWS + 1,
     )
+    truncated = len(rows) > MAX_HISTORY_ROWS
+    if truncated:
+        rows = rows[:MAX_HISTORY_ROWS]
     return render_template(
         "admin/history.html",
         rows=rows,
         year=year, month=month, type=reimbursement_type,
         month_names=_MONTH_NAMES_IT,
+        truncated=truncated,
+        max_rows=MAX_HISTORY_ROWS,
     )
 
 
@@ -160,11 +172,18 @@ def export():
         sub_cdc_id=session["sub_cdc_id"],
         year=year,
         month=month,
+        limit=MAX_HISTORY_ROWS + 1,
     )
+    truncated = len(rows) > MAX_HISTORY_ROWS
+    if truncated:
+        rows = rows[:MAX_HISTORY_ROWS]
     xlsx_bytes = build_xlsx(
         rows, year=year, month=month, month_name=_MONTH_NAMES_IT[month],
+        truncated=truncated,
+        max_rows=MAX_HISTORY_ROWS if truncated else None,
     )
-    filename = f"fogli-di-percorso-{year:04d}-{month:02d}.xlsx"
+    suffix = "-truncated" if truncated else ""
+    filename = f"fogli-di-percorso-{year:04d}-{month:02d}{suffix}.xlsx"
     return Response(
         xlsx_bytes,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

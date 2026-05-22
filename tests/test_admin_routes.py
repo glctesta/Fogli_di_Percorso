@@ -125,6 +125,68 @@ def test_history_filters_by_type(client, mock_pathtrack_repo_admin):
     assert kwargs["reimbursement_type"] == "TAXI"  # uppercased
 
 
+def test_history_passes_limit_to_repo(client, mock_pathtrack_repo_admin):
+    """history() should call list_for_sub_cdc with limit=MAX_HISTORY_ROWS + 1."""
+    from fdp_app.admin.routes import MAX_HISTORY_ROWS
+    _login_admin(client)
+    response = client.get("/admin/history")
+    assert response.status_code == 200
+    kwargs = mock_pathtrack_repo_admin.list_for_sub_cdc.call_args.kwargs
+    assert kwargs["limit"] == MAX_HISTORY_ROWS + 1
+
+
+def test_history_shows_warning_when_truncated(client, mock_pathtrack_repo_admin):
+    """When repo returns more than the cap, the page shows a truncation alert."""
+    from fdp_app.repos.pathtrack_repo import PathTrackRow, PathTrackWithEmployee
+    from datetime import date as Date
+    _login_admin(client, sub_cdc_id=42)
+
+    def _mk(i: int) -> PathTrackWithEmployee:
+        return PathTrackWithEmployee(
+            row=PathTrackRow(
+                path_track_id=i, registry_id=None, date_path_track=Date(2026, 5, 1),
+                declarated_path_id=99, in_behalf_of_id=None,
+                reimbursement_type="CARBURANTE", number_of_trips=1, road_km=1.0,
+                rate_id_used=3, taxi_total_eur=None, computed_amount_eur=1.0,
+                status="DRAFT", submitted_on=None,
+            ),
+            employee_surname=f"Dip{i}", employee_name="X",
+        )
+
+    # Patch MAX_HISTORY_ROWS down so we don't need 500 mock rows
+    with patch("fdp_app.admin.routes.MAX_HISTORY_ROWS", 2):
+        mock_pathtrack_repo_admin.list_for_sub_cdc.return_value = [_mk(i) for i in range(3)]
+        response = client.get("/admin/history")
+        assert response.status_code == 200
+        assert b"troncati" in response.data.lower() or b"troncati" in response.data
+        # Only the first 2 rows are rendered
+        assert b"Dip0" in response.data
+        assert b"Dip1" in response.data
+        assert b"Dip2" not in response.data
+
+
+def test_history_no_warning_when_under_cap(client, mock_pathtrack_repo_admin):
+    """When repo returns <= cap, no truncation alert appears."""
+    from fdp_app.repos.pathtrack_repo import PathTrackRow, PathTrackWithEmployee
+    from datetime import date as Date
+    _login_admin(client)
+    mock_pathtrack_repo_admin.list_for_sub_cdc.return_value = [
+        PathTrackWithEmployee(
+            row=PathTrackRow(
+                path_track_id=1, registry_id=None, date_path_track=Date(2026, 5, 1),
+                declarated_path_id=99, in_behalf_of_id=None,
+                reimbursement_type="CARBURANTE", number_of_trips=1, road_km=1.0,
+                rate_id_used=3, taxi_total_eur=None, computed_amount_eur=1.0,
+                status="DRAFT", submitted_on=None,
+            ),
+            employee_surname="Solo", employee_name="X",
+        ),
+    ]
+    response = client.get("/admin/history")
+    assert response.status_code == 200
+    assert b"troncati" not in response.data.lower()
+
+
 def test_view_pathtrack_requires_admin(client):
     with client.session_transaction() as sess:
         sess["user_id"] = 10

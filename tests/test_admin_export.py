@@ -116,6 +116,40 @@ def test_export_rejects_missing_year(client, mock_pt_repo_export):
     assert response.status_code == 400
 
 
+def test_export_passes_limit_to_repo(client, mock_pt_repo_export):
+    """export() should call list_for_sub_cdc with limit=MAX_HISTORY_ROWS + 1."""
+    from fdp_app.admin.routes import MAX_HISTORY_ROWS
+    _login_admin(client)
+    response = client.get("/admin/export?year=2026&month=4")
+    assert response.status_code == 200
+    kwargs = mock_pt_repo_export.list_for_sub_cdc.call_args.kwargs
+    assert kwargs["limit"] == MAX_HISTORY_ROWS + 1
+
+
+def test_export_filename_has_truncated_suffix_when_capped(client, mock_pt_repo_export):
+    """When the result exceeds the cap, filename gets a -truncated suffix."""
+    _login_admin(client)
+    with patch("fdp_app.admin.routes.MAX_HISTORY_ROWS", 2):
+        mock_pt_repo_export.list_for_sub_cdc.return_value = [
+            _entry(path_track_id=i) for i in range(3)
+        ]
+        response = client.get("/admin/export?year=2026&month=4")
+        assert response.status_code == 200
+        cd = response.headers.get("Content-Disposition", "")
+        assert "fogli-di-percorso-2026-04-truncated.xlsx" in cd
+
+
+def test_export_filename_unchanged_when_under_cap(client, mock_pt_repo_export):
+    """When under the cap, filename has no -truncated suffix."""
+    _login_admin(client)
+    mock_pt_repo_export.list_for_sub_cdc.return_value = [_entry()]
+    response = client.get("/admin/export?year=2026&month=4")
+    assert response.status_code == 200
+    cd = response.headers.get("Content-Disposition", "")
+    assert "fogli-di-percorso-2026-04.xlsx" in cd
+    assert "truncated" not in cd
+
+
 def test_build_xlsx_injects_banner_when_truncated():
     """When truncated=True, row 1 is a banner mentioning the cap; headers shift to row 2."""
     entries = [_entry()]
