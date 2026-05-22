@@ -105,7 +105,7 @@ ORDER BY DatePathTrack DESC
 """
 
 _QUERY_LIST_SUB_CDC = """
-SELECT
+SELECT /*TOP*/
     pt.PathTrackId, pt.RegistryId, pt.DatePathTrack, pt.DeclaratedPathId,
     pt.InBehalfOfId, pt.ReimbursementType, pt.NumberOfTrips, pt.RoadKm,
     pt.RateIdUsed, pt.TaxiTotalEur, pt.ComputedAmountEur, pt.Status, pt.SubmittedOn,
@@ -275,14 +275,20 @@ class PathTrackRepo(BaseRepo):
         year: int | None = None,
         month: int | None = None,
         reimbursement_type: str | None = None,
+        limit: int | None = None,
     ) -> list:
         """Lists all path tracks for a SubCdcId, optionally filtered by year/month/type.
 
         The JOIN follows COALESCE(InBehalfOfId, EmployeeHireHistoryId) so that
         delegated entries are attributed to the represented employee.
+
+        Args:
+            limit: If given, the SQL query uses TOP (limit) to cap rows at the
+                database level. Callers that need to detect truncation should
+                pass `cap + 1` and check `len(rows) > cap` on the result.
         """
         filters = []
-        params = [sub_cdc_id]
+        params: list = [sub_cdc_id]
         if year is not None:
             filters.append("YEAR(pt.DatePathTrack) = ?")
             params.append(year)
@@ -296,6 +302,11 @@ class PathTrackRepo(BaseRepo):
             "/*FILTERS*/",
             ("AND " + " AND ".join(filters)) if filters else "",
         )
+        if limit is not None:
+            sql = sql.replace("/*TOP*/", "TOP (?)")
+            params.insert(0, limit)
+        else:
+            sql = sql.replace("/*TOP*/", "")
         cursor = self._open_cursor()
         try:
             cursor.execute(sql, *params)
