@@ -60,15 +60,15 @@ For `export()`, when `truncated` is True the filename becomes `fogli-di-percorso
 
 ### Service change
 
-`fdp_app.admin.service.build_xlsx` gains `truncated: bool = False`.
+`fdp_app.admin.service.build_xlsx` gains two kwargs: `truncated: bool = False` and `max_rows: int | None = None`.
 
 When `truncated` is True, the sheet layout shifts by one row:
 
-- Row 1: merged banner cell spanning all columns, text `"AVVISO: risultati troncati a 500 righe. Restringere i filtri per dati completi."`, styled bold with a yellow fill.
+- Row 1: merged banner cell spanning all columns, text `f"AVVISO: risultati troncati a {max_rows} righe. Restringere i filtri per dati completi."`, styled bold with a yellow fill.
 - Row 2: column headers.
 - Row 3+: data.
 
-When `truncated` is False, layout is unchanged from today (row 1 headers, row 2+ data).
+When `truncated` is False, layout is unchanged from today (row 1 headers, row 2+ data). `max_rows` is required only when `truncated=True`; the builder asserts this.
 
 ### Template change
 
@@ -103,7 +103,7 @@ GET /admin/export?year=2026&month=5
   ← ≤501 rows
   → truncated = len(rows) > 500
   → rows = rows[:500]
-  → build_xlsx(rows, year=2026, month=5, month_name="Maggio", truncated=truncated)
+  → build_xlsx(rows, year=2026, month=5, month_name="Maggio", truncated=truncated, max_rows=500)
   → filename = "fogli-di-percorso-2026-05.xlsx" or "...-truncated.xlsx"
   → Response(xlsx_bytes, headers={"Content-Disposition": ...})
 ```
@@ -122,7 +122,7 @@ GET /admin/export?year=2026&month=5
 ## Wording (Italian, matching existing UI)
 
 - Template banner: `"Risultati troncati a 500 righe. Restringere i filtri per dati completi."`
-- XLSX banner row: `"AVVISO: risultati troncati a 500 righe. Restringere i filtri per dati completi."`
+- XLSX banner row: `f"AVVISO: risultati troncati a {max_rows} righe. Restringere i filtri per dati completi."` (interpolated from `MAX_HISTORY_ROWS`)
 - Filename suffix: `-truncated` (English — filename, not user-facing copy)
 
 ## Testing approach
@@ -138,7 +138,7 @@ GET /admin/export?year=2026&month=5
 1. `test_export_passes_limit_to_repo` — assert `list_for_sub_cdc` called with `limit=500`.
 2. `test_export_filename_has_truncated_suffix_when_capped` — patch `MAX_HISTORY_ROWS` to 2, mock repo returns 3 rows, assert `Content-Disposition` contains `fogli-di-percorso-2026-04-truncated.xlsx`.
 3. `test_export_filename_unchanged_when_under_cap` — assert no `-truncated` in filename.
-4. `test_build_xlsx_injects_banner_when_truncated` — call `build_xlsx(entries, ..., truncated=True)`, load workbook, assert row 1 cell contains `"AVVISO"` and `"troncati"`, assert headers shifted to row 2.
+4. `test_build_xlsx_injects_banner_when_truncated` — call `build_xlsx(entries, ..., truncated=True, max_rows=500)`, load workbook, assert row 1 cell contains `"AVVISO"`, `"troncati"`, and `"500"`; assert headers shifted to row 2.
 5. `test_build_xlsx_no_banner_when_not_truncated` — default `truncated=False`, layout unchanged (header row 1, data row 2). This is the existing behavior — covered by the current `test_build_xlsx_generates_valid_workbook`, no new test needed; verify it still passes.
 
 ### Existing tests to verify still pass
