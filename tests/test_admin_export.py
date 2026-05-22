@@ -114,3 +114,32 @@ def test_export_rejects_missing_year(client, mock_pt_repo_export):
     _login_admin(client)
     response = client.get("/admin/export?month=4")
     assert response.status_code == 400
+
+
+def test_build_xlsx_injects_banner_when_truncated():
+    """When truncated=True, row 1 is a banner mentioning the cap; headers shift to row 2."""
+    entries = [_entry()]
+    xlsx_bytes = build_xlsx(
+        entries, year=2026, month=4, month_name="Aprile",
+        truncated=True, max_rows=500,
+    )
+    wb = load_workbook(BytesIO(xlsx_bytes))
+    ws = wb.active
+    banner = ws.cell(row=1, column=1).value or ""
+    assert "AVVISO" in banner
+    assert "troncati" in banner
+    assert "500" in banner
+    # Headers shifted to row 2
+    header_row = [c.value for c in ws[2]]
+    assert "Cognome" in header_row
+    # Data starts at row 3
+    assert ws.cell(row=3, column=1).value == "Rossi"
+
+
+def test_build_xlsx_requires_max_rows_when_truncated():
+    """If truncated=True but max_rows is None, the builder should raise."""
+    with pytest.raises((ValueError, AssertionError)):
+        build_xlsx(
+            [_entry()], year=2026, month=4, month_name="Aprile",
+            truncated=True, max_rows=None,
+        )
