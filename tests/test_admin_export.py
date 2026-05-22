@@ -138,7 +138,7 @@ def test_build_xlsx_injects_banner_when_truncated():
 
 def test_build_xlsx_requires_max_rows_when_truncated():
     """If truncated=True but max_rows is None, the builder should raise."""
-    with pytest.raises((ValueError, AssertionError)):
+    with pytest.raises(ValueError, match="max_rows must be set"):
         build_xlsx(
             [_entry()], year=2026, month=4, month_name="Aprile",
             truncated=True, max_rows=None,
