@@ -42,6 +42,15 @@
     </div>
 </form>
 
+{% if truncated %}
+<div class="alert alert-warning d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div>
+        {{ _('Risultati troncati a %(max_rows)s righe. Restringere i filtri (anno, mese, tipo) per ottenere dati completi.', max_rows=max_rows) }}
+    </div>
+</div>
+{% endif %}
+
 {% if rows %}
 <div class="table-responsive">
 <table class="table table-striped">
