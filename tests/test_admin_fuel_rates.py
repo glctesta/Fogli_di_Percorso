@@ -205,6 +205,8 @@ def test_fuel_rates_create_handles_duplicate_valid_from(client, mock_rate_repo):
     mock_rate_repo.insert.assert_called_once()
     # the page renders and does not 500
     assert b"Tariffe rimborso km" in response.data
+    # the admin sees a danger flash; silent swallow would defeat Task 7
+    assert b"Esiste gia" in response.data
 
 
 def test_fuel_rates_create_propagates_unrelated_db_errors(client, mock_rate_repo):
