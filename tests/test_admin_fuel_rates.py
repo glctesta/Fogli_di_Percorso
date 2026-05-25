@@ -223,3 +223,15 @@ def test_fuel_rates_create_propagates_unrelated_db_errors(client, mock_rate_repo
                 "valid_from": "2026-06-01",
             },
         )
+
+
+def test_representable_page_links_to_fuel_rates(client):
+    with patch("fdp_app.admin.routes.EmployeeRepo") as emp_cls:
+        emp_instance = MagicMock()
+        emp_instance.find_representable_for.return_value = []
+        emp_cls.return_value = emp_instance
+        _login_admin(client)
+        response = client.get("/admin/representable")
+    assert response.status_code == 200
+    assert b"/admin/fuel-rates" in response.data
+    assert b"fuel-pump" in response.data
