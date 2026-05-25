@@ -172,6 +172,68 @@ def fuel_rates():
     )
 
 
+@bp.route("/fuel-rates", methods=["POST"])
+@login_required
+@admin_required
+def fuel_rates_create():
+    db = current_app.config["_db"]
+    repo = RateRepo(db)
+    try:
+        consumption = float(request.form.get("avg_consumption_km_l") or "")
+    except ValueError:
+        flash(_("Consumo (km/L) non valido."), "danger")
+        return redirect(url_for("admin.fuel_rates"))
+    if consumption <= 0:
+        flash(_("Consumo (km/L) deve essere positivo."), "danger")
+        return redirect(url_for("admin.fuel_rates"))
+    try:
+        fuel_price = float(request.form.get("avg_fuel_price_eur_l") or "")
+    except ValueError:
+        flash(_("Prezzo carburante (EUR/L) non valido."), "danger")
+        return redirect(url_for("admin.fuel_rates"))
+    if fuel_price <= 0:
+        flash(_("Prezzo carburante (EUR/L) deve essere positivo."), "danger")
+        return redirect(url_for("admin.fuel_rates"))
+    valid_from_raw = request.form.get("valid_from") or ""
+    valid_to_raw = request.form.get("valid_to") or ""
+    try:
+        valid_from = _date.fromisoformat(valid_from_raw)
+    except ValueError:
+        flash(_("Data 'valido da' non valida."), "danger")
+        return redirect(url_for("admin.fuel_rates"))
+    valid_to = None
+    if valid_to_raw:
+        try:
+            valid_to = _date.fromisoformat(valid_to_raw)
+        except ValueError:
+            flash(_("Data 'valido fino a' non valida."), "danger")
+            return redirect(url_for("admin.fuel_rates"))
+        if valid_to < valid_from:
+            flash(_("'Valido fino a' non puo' essere precedente a 'valido da'."), "danger")
+            return redirect(url_for("admin.fuel_rates"))
+    try:
+        new_id = repo.insert(
+            avg_consumption_km_l=consumption,
+            avg_fuel_price_eur_l=fuel_price,
+            valid_from=valid_from,
+            valid_to=valid_to,
+            user_sys=session.get("full_name") or "admin",
+        )
+    except Exception as exc:
+        # UNIQUE(ValidFrom) violation surfaces here as pyodbc.IntegrityError.
+        if "UX_Rates_ValidFrom" in str(exc) or "UNIQUE" in str(exc).upper():
+            flash(_("Esiste gia\' una tariffa con questo 'valido da'."), "danger")
+            return redirect(url_for("admin.fuel_rates"))
+        raise
+    current_app.logger.info(
+        "Fuel rate inserted: user_id=%s rate_id=%s consumption=%s price=%s from=%s to=%s",
+        session.get("user_id"), new_id, consumption, fuel_price, valid_from, valid_to,
+    )
+    flash(_("Tariffa inserita (consumo=%(c).2f km/L, prezzo=%(p).3f EUR/L).",
+            c=consumption, p=fuel_price), "success")
+    return redirect(url_for("admin.fuel_rates"))
+
+
 @bp.route("/export", methods=["GET"])
 @login_required
 @admin_required

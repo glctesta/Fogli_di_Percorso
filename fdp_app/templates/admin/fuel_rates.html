@@ -8,6 +8,34 @@
     {{ _('Gestisci consumo medio (km/L) e prezzo medio carburante (EUR/L). Ogni inserimento crea una nuova versione: i rimborsi gia\' registrati restano congelati sul RateId usato al momento del submit.') }}
 </p>
 
+<h4 class="mt-4">{{ _('Inserisci nuova tariffa') }}</h4>
+<form method="post" action="{{ url_for('admin.fuel_rates_create') }}" class="row g-2 mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Consumo medio (km/L)') }}</label>
+        <input type="number" name="avg_consumption_km_l" class="form-control"
+               step="0.01" min="0.01" required placeholder="15.00">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Prezzo medio carburante (EUR/L)') }}</label>
+        <input type="number" name="avg_fuel_price_eur_l" class="form-control"
+               step="0.001" min="0.001" required placeholder="1.700">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">{{ _('Valido da') }}</label>
+        <input type="date" name="valid_from" class="form-control" required>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">{{ _('Valido fino a (opzionale)') }}</label>
+        <input type="date" name="valid_to" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-circle"></i> {{ _('Salva tariffa') }}
+        </button>
+    </div>
+</form>
+
 <h4>{{ _('Tariffe attive e storiche') }}</h4>
 {% if recent %}
 <div class="table-responsive">

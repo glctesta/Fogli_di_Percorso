@@ -54,3 +54,42 @@ def test_fuel_rates_lists_rates(client, mock_rate_repo):
     assert b"1.700" in response.data
     assert b"2026-06-01" in response.data
     assert b"Rossi Mario" in response.data
+
+
+def test_fuel_rates_create(client, mock_rate_repo):
+    _login_admin(client)
+    mock_rate_repo.insert.return_value = 77
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15.00",
+            "avg_fuel_price_eur_l": "1.700",
+            "valid_from": "2026-06-01",
+            "valid_to": "2026-12-31",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    mock_rate_repo.insert.assert_called_once()
+    kwargs = mock_rate_repo.insert.call_args.kwargs
+    assert kwargs["avg_consumption_km_l"] == pytest.approx(15.0)
+    assert kwargs["avg_fuel_price_eur_l"] == pytest.approx(1.700)
+    assert kwargs["valid_from"] == date(2026, 6, 1)
+    assert kwargs["valid_to"] == date(2026, 12, 31)
+    assert kwargs["user_sys"] == "Rossi Mario"
+
+
+def test_fuel_rates_create_without_valid_to(client, mock_rate_repo):
+    _login_admin(client)
+    mock_rate_repo.insert.return_value = 78
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15.00",
+            "avg_fuel_price_eur_l": "1.700",
+            "valid_from": "2026-06-01",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert mock_rate_repo.insert.call_args.kwargs["valid_to"] is None
