@@ -185,3 +185,39 @@ def test_fuel_rates_create_rejects_invalid_valid_to(client, mock_rate_repo):
     )
     assert response.status_code == 200
     mock_rate_repo.insert.assert_not_called()
+
+
+def test_fuel_rates_create_handles_duplicate_valid_from(client, mock_rate_repo):
+    _login_admin(client)
+    mock_rate_repo.insert.side_effect = Exception(
+        "Violation of UNIQUE KEY constraint 'UX_Rates_ValidFrom'."
+    )
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15",
+            "avg_fuel_price_eur_l": "1.7",
+            "valid_from": "2026-06-01",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_called_once()
+    # the page renders and does not 500
+    assert b"Tariffe rimborso km" in response.data
+
+
+def test_fuel_rates_create_propagates_unrelated_db_errors(client, mock_rate_repo):
+    _login_admin(client)
+    mock_rate_repo.insert.side_effect = Exception("network timeout")
+    # With TESTING=True Flask re-raises unhandled exceptions from the test
+    # client instead of returning a 500 — we assert that propagation.
+    with pytest.raises(Exception, match="network timeout"):
+        client.post(
+            "/admin/fuel-rates",
+            data={
+                "avg_consumption_km_l": "15",
+                "avg_fuel_price_eur_l": "1.7",
+                "valid_from": "2026-06-01",
+            },
+        )
