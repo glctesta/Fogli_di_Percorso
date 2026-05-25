@@ -15,6 +15,7 @@ from fdp_app.auth.decorators import admin_required, login_required
 from fdp_app.repos.bnr_rate_repo import BnrRateRepo
 from fdp_app.repos.employee_repo import EmployeeRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
+from fdp_app.repos.rate_repo import RateRepo
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -156,6 +157,19 @@ def bnr_rates_create():
     )
     flash(_("Tasso standard inserito (rate=%(rate).4f).", rate=rate_value), "success")
     return redirect(url_for("admin.bnr_rates"))
+
+
+@bp.route("/fuel-rates", methods=["GET"])
+@login_required
+@admin_required
+def fuel_rates():
+    db = current_app.config["_db"]
+    repo = RateRepo(db)
+    recent = repo.list_recent(limit=20)
+    return render_template(
+        "admin/fuel_rates.html",
+        recent=recent,
+    )
 
 
 @bp.route("/export", methods=["GET"])
