@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 from fdp_app.repos.base_repo import BaseRepo
 
@@ -22,6 +22,9 @@ class Rate:
     rate_id: int
     avg_consumption_km_l: float
     avg_fuel_price_eur_l: float
+    valid_from: Optional[date] = None
+    valid_to: Optional[date] = None
+    user_sys: str = ""
 
 
 class RateRepo(BaseRepo):

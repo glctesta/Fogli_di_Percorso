@@ -49,3 +49,21 @@ def test_find_for_date_query_uses_validity_window():
     assert "ValidFrom <= ?" in sql_text
     assert "ValidTo IS NULL OR ValidTo >= ?" in sql_text
     assert params == [date(2026, 4, 1), date(2026, 4, 1)]
+
+
+def test_rate_dataclass_audit_fields_default_to_none_or_empty():
+    r = Rate(rate_id=1, avg_consumption_km_l=15.0, avg_fuel_price_eur_l=1.7)
+    assert r.valid_from is None
+    assert r.valid_to is None
+    assert r.user_sys == ""
+
+
+def test_rate_dataclass_accepts_audit_fields():
+    r = Rate(
+        rate_id=1, avg_consumption_km_l=15.0, avg_fuel_price_eur_l=1.7,
+        valid_from=date(2026, 1, 1), valid_to=date(2026, 12, 31),
+        user_sys="admin",
+    )
+    assert r.valid_from == date(2026, 1, 1)
+    assert r.valid_to == date(2026, 12, 31)
+    assert r.user_sys == "admin"
