@@ -93,3 +93,79 @@ def test_fuel_rates_create_without_valid_to(client, mock_rate_repo):
     )
     assert response.status_code == 302
     assert mock_rate_repo.insert.call_args.kwargs["valid_to"] is None
+
+
+def test_fuel_rates_create_rejects_invalid_consumption(client, mock_rate_repo):
+    _login_admin(client)
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "not-a-number",
+            "avg_fuel_price_eur_l": "1.7",
+            "valid_from": "2026-06-01",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_not_called()
+
+
+def test_fuel_rates_create_rejects_non_positive_consumption(client, mock_rate_repo):
+    _login_admin(client)
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "0",
+            "avg_fuel_price_eur_l": "1.7",
+            "valid_from": "2026-06-01",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_not_called()
+
+
+def test_fuel_rates_create_rejects_non_positive_price(client, mock_rate_repo):
+    _login_admin(client)
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15",
+            "avg_fuel_price_eur_l": "-0.5",
+            "valid_from": "2026-06-01",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_not_called()
+
+
+def test_fuel_rates_create_rejects_invalid_valid_from(client, mock_rate_repo):
+    _login_admin(client)
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15",
+            "avg_fuel_price_eur_l": "1.7",
+            "valid_from": "not-a-date",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_not_called()
+
+
+def test_fuel_rates_create_rejects_valid_to_before_valid_from(client, mock_rate_repo):
+    _login_admin(client)
+    response = client.post(
+        "/admin/fuel-rates",
+        data={
+            "avg_consumption_km_l": "15",
+            "avg_fuel_price_eur_l": "1.7",
+            "valid_from": "2026-06-01",
+            "valid_to": "2026-05-15",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    mock_rate_repo.insert.assert_not_called()
