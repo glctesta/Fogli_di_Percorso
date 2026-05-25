@@ -16,6 +16,13 @@ WHERE ValidFrom <= ?
 ORDER BY ValidFrom DESC
 """
 
+_QUERY_INSERT = """
+INSERT INTO Employee.fdp.PathTrackReimbursementRates
+    (AvgConsumptionKmL, AvgFuelPriceEurL, ValidFrom, ValidTo, UserSys)
+OUTPUT INSERTED.RateId
+VALUES (?, ?, ?, ?, ?)
+"""
+
 
 @dataclass(frozen=True)
 class Rate:
@@ -42,3 +49,17 @@ class RateRepo(BaseRepo):
             avg_consumption_km_l=float(row[1]),
             avg_fuel_price_eur_l=float(row[2]),
         )
+
+    def insert(self, *, avg_consumption_km_l: float, avg_fuel_price_eur_l: float,
+               valid_from: date, valid_to: Optional[date], user_sys: str) -> int:
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(
+                _QUERY_INSERT,
+                avg_consumption_km_l, avg_fuel_price_eur_l,
+                valid_from, valid_to, user_sys,
+            )
+            row = cursor.fetchone()
+            return int(row[0])
+        finally:
+            cursor.close()

@@ -67,3 +67,41 @@ def test_rate_dataclass_accepts_audit_fields():
     assert r.valid_from == date(2026, 1, 1)
     assert r.valid_to == date(2026, 12, 31)
     assert r.user_sys == "admin"
+
+
+def test_insert_executes_with_keyword_args_and_returns_id():
+    db, cursor = _make_db(fetchone=(42,))
+    repo = RateRepo(db)
+
+    new_id = repo.insert(
+        avg_consumption_km_l=15.0,
+        avg_fuel_price_eur_l=1.700,
+        valid_from=date(2026, 6, 1),
+        valid_to=date(2026, 12, 31),
+        user_sys="Rossi Mario",
+    )
+
+    assert new_id == 42
+    sql_text, *params = cursor.execute.call_args[0]
+    assert "INSERT INTO" in sql_text
+    assert "PathTrackReimbursementRates" in sql_text
+    assert "OUTPUT INSERTED.RateId" in sql_text
+    assert params == [15.0, 1.700, date(2026, 6, 1), date(2026, 12, 31), "Rossi Mario"]
+    cursor.close.assert_called_once()
+
+
+def test_insert_accepts_null_valid_to():
+    db, cursor = _make_db(fetchone=(43,))
+    repo = RateRepo(db)
+
+    new_id = repo.insert(
+        avg_consumption_km_l=15.0,
+        avg_fuel_price_eur_l=1.700,
+        valid_from=date(2026, 6, 1),
+        valid_to=None,
+        user_sys="admin",
+    )
+
+    assert new_id == 43
+    _, *params = cursor.execute.call_args[0]
+    assert params[3] is None
