@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-21 09:16+0300\n"
+"POT-Creation-Date: 2026-05-26 16:56+0300\n"
 "PO-Revision-Date: 2026-05-20 11:54+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: it\n"
@@ -18,26 +18,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: fdp_app/admin/routes.py:114
+#: fdp_app/admin/routes.py:127
 msgid "Valore tasso non valido."
 msgstr "Valore tasso non valido."
 
-#: fdp_app/admin/routes.py:117
+#: fdp_app/admin/routes.py:130
 msgid "Tasso deve essere positivo."
 msgstr "Tasso deve essere positivo."
 
-#: fdp_app/admin/routes.py:124
+#: fdp_app/admin/routes.py:137 fdp_app/admin/routes.py:202
 msgid "Data 'valido da' non valida."
 msgstr "Data 'valido da' non valida."
 
-#: fdp_app/admin/routes.py:131
+#: fdp_app/admin/routes.py:144 fdp_app/admin/routes.py:209
 msgid "Data 'valido fino a' non valida."
 msgstr "Data 'valido fino a' non valida."
 
-#: fdp_app/admin/routes.py:145
+#: fdp_app/admin/routes.py:158
 #, python-format
 msgid "Tasso standard inserito (rate=%(rate).4f)."
 msgstr "Tasso standard inserito (rate=%(rate).4f)."
+
+#: fdp_app/admin/routes.py:184
+msgid "Consumo (km/L) non valido."
+msgstr ""
+
+#: fdp_app/admin/routes.py:187
+msgid "Consumo (km/L) deve essere positivo."
+msgstr ""
+
+#: fdp_app/admin/routes.py:192
+msgid "Prezzo carburante (EUR/L) non valido."
+msgstr ""
+
+#: fdp_app/admin/routes.py:195
+msgid "Prezzo carburante (EUR/L) deve essere positivo."
+msgstr ""
+
+#: fdp_app/admin/routes.py:212
+msgid "'Valido fino a' non puo' essere precedente a 'valido da'."
+msgstr ""
+
+#: fdp_app/admin/routes.py:225
+msgid "Esiste gia' una tariffa con questo 'valido da'."
+msgstr ""
+
+#: fdp_app/admin/routes.py:232
+#, python-format
+msgid "Tariffa inserita (consumo=%(c).2f km/L, prezzo=%(p).3f EUR/L)."
+msgstr ""
 
 #: fdp_app/auth/routes.py:41
 msgid "Troppi tentativi falliti, riprovare piu' tardi."
@@ -178,10 +207,14 @@ msgstr "Bozza cancellata."
 msgid "Impossibile cancellare (non e' una bozza o gia' cancellata)."
 msgstr "Impossibile cancellare (non e' una bozza o gia' cancellata)."
 
-#: fdp_app/templates/_lang_selector.html:6
+#: fdp_app/templates/_lang_selector.html:9
 #, python-format
 msgid "Cambia lingua. Lingua attuale: %(lang)s"
 msgstr "Cambia lingua. Lingua attuale: %(lang)s"
+
+#: fdp_app/templates/_lang_selector.html:10
+msgid "Lingua"
+msgstr ""
 
 #: fdp_app/templates/base.html:22
 msgid "Salta al contenuto"
@@ -260,10 +293,13 @@ msgstr ""
 
 #: fdp_app/templates/admin/bnr_rates.html:20
 #: fdp_app/templates/admin/bnr_rates.html:41
+#: fdp_app/templates/admin/fuel_rates.html:25
+#: fdp_app/templates/admin/fuel_rates.html:48
 msgid "Valido da"
 msgstr ""
 
 #: fdp_app/templates/admin/bnr_rates.html:24
+#: fdp_app/templates/admin/fuel_rates.html:29
 #, fuzzy
 msgid "Valido fino a (opzionale)"
 msgstr "Data 'valido fino a' non valida."
@@ -284,10 +320,12 @@ msgid "Tasso"
 msgstr "Password"
 
 #: fdp_app/templates/admin/bnr_rates.html:42
+#: fdp_app/templates/admin/fuel_rates.html:49
 msgid "Valido fino a"
 msgstr ""
 
 #: fdp_app/templates/admin/bnr_rates.html:43
+#: fdp_app/templates/admin/fuel_rates.html:50
 msgid "Inserito da"
 msgstr ""
 
@@ -323,14 +361,81 @@ msgid "Nessun tasso ancora acquisito. Il primo submit attivera' il fetch live."
 msgstr ""
 
 #: fdp_app/templates/admin/bnr_rates.html:95
+#: fdp_app/templates/admin/fuel_rates.html:74
 #, fuzzy
 msgid "Torna all'area admin"
 msgstr "Vai all'area admin"
 
+#: fdp_app/templates/admin/bnr_rates.html:98
+#: fdp_app/templates/admin/representable.html:53
+msgid "Gestisci tariffe €/km"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:2
+#: fdp_app/templates/admin/fuel_rates.html:5
+msgid "Tariffe rimborso km"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:4
+msgid "Gestione tariffe rimborso km"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:8
+msgid ""
+"Gestisci consumo medio (km/L) e prezzo medio carburante (EUR/L). Ogni "
+"inserimento crea una nuova versione: i rimborsi gia' registrati restano "
+"congelati sul RateId usato al momento del submit."
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:11
+msgid "Inserisci nuova tariffa"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:15
+msgid "Consumo medio (km/L)"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:20
+msgid "Prezzo medio carburante (EUR/L)"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:34
+msgid "Salva tariffa"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:39
+msgid "Tariffe attive e storiche"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:45
+msgid "Consumo km/L"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:46
+msgid "Prezzo EUR/L"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:47
+msgid "€/km"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:60
+msgid "(aperto)"
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:69
+msgid "Nessuna tariffa configurata."
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:77
+#: fdp_app/templates/admin/representable.html:50
+msgid "Gestisci tassi BNR EUR-RON"
+msgstr ""
+
 #: fdp_app/templates/admin/history.html:2
 #: fdp_app/templates/admin/history.html:4
 #: fdp_app/templates/admin/history.html:5
-#: fdp_app/templates/admin/representable.html:48
+#: fdp_app/templates/admin/representable.html:47
 msgid "Storico dichiarazioni SubCdc"
 msgstr "Storico dichiarazioni SubCdc"
 
@@ -339,7 +444,7 @@ msgid "Anno"
 msgstr "Anno"
 
 #: fdp_app/templates/admin/history.html:14
-#: fdp_app/templates/admin/history.html:51
+#: fdp_app/templates/admin/history.html:60
 #: fdp_app/templates/pathtracks/list.html:16
 msgid "Mese"
 msgstr "Mese"
@@ -350,7 +455,7 @@ msgid "Tutti"
 msgstr "Tutti"
 
 #: fdp_app/templates/admin/history.html:25
-#: fdp_app/templates/admin/history.html:53
+#: fdp_app/templates/admin/history.html:62
 #: fdp_app/templates/admin/view_pathtrack.html:24
 #: fdp_app/templates/pathtracks/list.html:18
 msgid "Tipo"
@@ -376,44 +481,51 @@ msgstr "Filtra"
 msgid "Export XLSX"
 msgstr "Export XLSX"
 
-#: fdp_app/templates/admin/history.html:50
-#: fdp_app/templates/admin/representable.html:16
+#: fdp_app/templates/admin/history.html:49
+#, python-format
+msgid ""
+"Risultati troncati a %(max_rows)s righe. Restringere i filtri (anno, "
+"mese, tipo) per ottenere dati completi."
+msgstr ""
+
+#: fdp_app/templates/admin/history.html:59
+#: fdp_app/templates/admin/representable.html:15
 msgid "Dipendente"
 msgstr "Dipendente"
 
-#: fdp_app/templates/admin/history.html:52
+#: fdp_app/templates/admin/history.html:61
 #: fdp_app/templates/admin/view_pathtrack.html:21
 #: fdp_app/templates/pathtracks/list.html:17
 #: fdp_app/templates/pathtracks/view.html:18
 msgid "Stato"
 msgstr "Stato"
 
-#: fdp_app/templates/admin/history.html:54
+#: fdp_app/templates/admin/history.html:63
 #: fdp_app/templates/admin/view_pathtrack.html:26
 #: fdp_app/templates/pathtracks/list.html:19
 msgid "Viaggi A/R"
 msgstr "Viaggi A/R"
 
-#: fdp_app/templates/admin/history.html:55
+#: fdp_app/templates/admin/history.html:64
 #: fdp_app/templates/admin/view_pathtrack.html:31
 #: fdp_app/templates/pathtracks/list.html:20
 msgid "Importo"
 msgstr "Importo"
 
-#: fdp_app/templates/admin/history.html:56
+#: fdp_app/templates/admin/history.html:65
 #: fdp_app/templates/admin/view_pathtrack.html:22
 #: fdp_app/templates/pathtracks/list.html:21
 msgid "N. registro"
 msgstr "N. registro"
 
-#: fdp_app/templates/admin/history.html:67
+#: fdp_app/templates/admin/history.html:76
 #: fdp_app/templates/admin/view_pathtrack.html:8
 #: fdp_app/templates/pathtracks/list.html:31
 #: fdp_app/templates/pathtracks/view.html:8
 msgid "BOZZA"
 msgstr "BOZZA"
 
-#: fdp_app/templates/admin/history.html:69
+#: fdp_app/templates/admin/history.html:78
 #: fdp_app/templates/admin/view_pathtrack.html:10
 #: fdp_app/templates/pathtracks/list.html:33
 #: fdp_app/templates/pathtracks/view.html:10
@@ -421,16 +533,16 @@ msgstr "BOZZA"
 msgid "INVIATA"
 msgstr "INVIATA"
 
-#: fdp_app/templates/admin/history.html:79
+#: fdp_app/templates/admin/history.html:88
 #: fdp_app/templates/pathtracks/list.html:42
 msgid "Dettagli"
 msgstr "Dettagli"
 
-#: fdp_app/templates/admin/history.html:88
+#: fdp_app/templates/admin/history.html:97
 msgid "Nessuna dichiarazione trovata con i filtri selezionati."
 msgstr "Nessuna dichiarazione trovata con i filtri selezionati."
 
-#: fdp_app/templates/admin/history.html:92
+#: fdp_app/templates/admin/history.html:101
 msgid "Torna ai rappresentati"
 msgstr "Torna ai rappresentati"
 
@@ -443,32 +555,35 @@ msgstr "Dipendenti rappresentabili"
 msgid "Area amministrazione"
 msgstr "Area amministrazione"
 
-#: fdp_app/templates/admin/representable.html:17
+#: fdp_app/templates/admin/representable.html:7
+msgid ""
+"Puoi inserire dichiarazioni e gestire punti di partenza per conto dei "
+"colleghi elencati qui sotto (stesso SubCdc, FunctionCode minore della "
+"tua)."
+msgstr ""
+
+#: fdp_app/templates/admin/representable.html:16
 msgid "FC"
 msgstr "FC"
 
-#: fdp_app/templates/admin/representable.html:18
+#: fdp_app/templates/admin/representable.html:17
 msgid "Azioni"
 msgstr "Azioni"
 
-#: fdp_app/templates/admin/representable.html:29
+#: fdp_app/templates/admin/representable.html:28
 msgid "Mappa"
 msgstr "Mappa"
 
-#: fdp_app/templates/admin/representable.html:33
+#: fdp_app/templates/admin/representable.html:32
 #: fdp_app/templates/pathtracks/list.html:8
 #: fdp_app/templates/pathtracks/new.html:2
 #: fdp_app/templates/pathtracks/new.html:5
 msgid "Nuova dichiarazione"
 msgstr "Nuova dichiarazione"
 
-#: fdp_app/templates/admin/representable.html:43
+#: fdp_app/templates/admin/representable.html:42
 msgid "Nessun collega rappresentabile per il tuo SubCdc."
 msgstr "Nessun collega rappresentabile per il tuo SubCdc."
-
-#: fdp_app/templates/admin/representable.html:51
-msgid "Gestisci tassi BNR EUR-RON"
-msgstr ""
 
 #: fdp_app/templates/admin/view_pathtrack.html:2
 #: fdp_app/templates/pathtracks/view.html:2
