@@ -79,7 +79,18 @@ def create_app(*, settings: type[Settings] | None = None,
     @app.route("/lang/<code>", methods=["POST"])
     def set_language(code):
         from flask import redirect, request, make_response
+        app.logger.info(
+            "LANG-SWITCH hit: code=%r form-next=%r referrer=%r "
+            "has-csrf=%s current-cookie=%r remote=%s",
+            code,
+            request.form.get("next"),
+            request.referrer,
+            "csrf_token" in request.form,
+            request.cookies.get(settings.LANGUAGE_COOKIE_NAME),
+            request.remote_addr,
+        )
         if code not in settings.LANGUAGES:
+            app.logger.warning("LANG-SWITCH rejected: invalid code=%r", code)
             return ("Invalid language", 400)
         next_url = request.form.get("next") or request.referrer or "/"
         resp = make_response(redirect(next_url))
@@ -89,6 +100,10 @@ def create_app(*, settings: type[Settings] | None = None,
             max_age=settings.LANGUAGE_COOKIE_MAX_AGE,
             samesite="Lax",
             httponly=False,
+        )
+        app.logger.info(
+            "LANG-SWITCH ok: set %s=%s, redirect to %s",
+            settings.LANGUAGE_COOKIE_NAME, code, next_url,
         )
         return resp
 
