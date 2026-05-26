@@ -237,7 +237,7 @@ msgstr "Cancel"
 #: fdp_app/templates/admin/bnr_rates.html:2
 #: fdp_app/templates/admin/bnr_rates.html:5
 msgid "Tassi BNR EUR-RON"
-msgstr ""
+msgstr "BNR EUR-RON Rates"
 
 #: fdp_app/templates/admin/bnr_rates.html:4
 msgid "Gestione tassi BNR EUR-RON"
@@ -249,83 +249,83 @@ msgid ""
 "prima scelta. In assenza di standard, il sistema scarica live da BNR.ro o"
 " cursbnr.ro al momento del submit."
 msgstr ""
+"Manage EUR->RON exchange rates. STANDARD rates are used as the first "
+"choice. If no standard is set, the system fetches live from BNR.ro or "
+"cursbnr.ro at submission time."
 
 #: fdp_app/templates/admin/bnr_rates.html:11
 msgid "Inserisci nuovo tasso standard"
-msgstr ""
+msgstr "Insert new standard rate"
 
 #: fdp_app/templates/admin/bnr_rates.html:15
 msgid "Tasso (RON per 1 EUR)"
-msgstr ""
+msgstr "Rate (RON per 1 EUR)"
 
 #: fdp_app/templates/admin/bnr_rates.html:20
 #: fdp_app/templates/admin/bnr_rates.html:41
 msgid "Valido da"
-msgstr ""
+msgstr "Valid from"
 
 #: fdp_app/templates/admin/bnr_rates.html:24
-#, fuzzy
 msgid "Valido fino a (opzionale)"
-msgstr "Invalid 'valid to' date."
+msgstr "Valid to (optional)"
 
 #: fdp_app/templates/admin/bnr_rates.html:29
-#, fuzzy
 msgid "Salva tasso"
-msgstr "Save draft"
+msgstr "Save rate"
 
 #: fdp_app/templates/admin/bnr_rates.html:34
 msgid "Tassi STANDARD attivi"
-msgstr ""
+msgstr "Active STANDARD rates"
 
 #: fdp_app/templates/admin/bnr_rates.html:40
 #: fdp_app/templates/admin/bnr_rates.html:70
-#, fuzzy
 msgid "Tasso"
-msgstr "Password"
+msgstr "Rate"
 
 #: fdp_app/templates/admin/bnr_rates.html:42
 msgid "Valido fino a"
-msgstr ""
+msgstr "Valid to"
 
 #: fdp_app/templates/admin/bnr_rates.html:43
 msgid "Inserito da"
-msgstr ""
+msgstr "Inserted by"
 
 #: fdp_app/templates/admin/bnr_rates.html:51
-#, fuzzy
 msgid "aperto"
-msgstr "Amount"
+msgstr "open"
 
 #: fdp_app/templates/admin/bnr_rates.html:60
 msgid ""
 "Nessun tasso STANDARD configurato. Il sistema usera' BNR.ro live ad ogni "
 "submit."
 msgstr ""
+"No STANDARD rate configured. The system will use BNR.ro live at every "
+"submission."
 
 #: fdp_app/templates/admin/bnr_rates.html:64
 msgid "Ultimi tassi acquisiti (live + cache)"
-msgstr ""
+msgstr "Latest acquired rates (live + cache)"
 
 #: fdp_app/templates/admin/bnr_rates.html:71
 msgid "Fonte"
-msgstr ""
+msgstr "Source"
 
 #: fdp_app/templates/admin/bnr_rates.html:72
 msgid "Data"
-msgstr ""
+msgstr "Date"
 
 #: fdp_app/templates/admin/bnr_rates.html:73
 msgid "Standard?"
-msgstr ""
+msgstr "Standard?"
 
 #: fdp_app/templates/admin/bnr_rates.html:90
 msgid "Nessun tasso ancora acquisito. Il primo submit attivera' il fetch live."
-msgstr ""
+msgstr "No rates acquired yet. The first submission will trigger the live fetch."
 
 #: fdp_app/templates/admin/bnr_rates.html:95
-#, fuzzy
 msgid "Torna all'area admin"
-msgstr "Go to admin area"
+msgstr "Back to admin area"
 
 #: fdp_app/templates/admin/history.html:2
 #: fdp_app/templates/admin/history.html:4
@@ -468,7 +468,7 @@ msgstr "No representable colleagues for your SubCdc."
 
 #: fdp_app/templates/admin/representable.html:51
 msgid "Gestisci tassi BNR EUR-RON"
-msgstr ""
+msgstr "Manage BNR EUR-RON rates"
 
 #: fdp_app/templates/admin/view_pathtrack.html:2
 #: fdp_app/templates/pathtracks/view.html:2
@@ -506,7 +506,7 @@ msgstr "Download"
 #: fdp_app/templates/admin/view_pathtrack.html:51
 #: fdp_app/templates/pathtracks/view.html:60
 msgid "Nessun documento."
-msgstr "Nessun documento."
+msgstr "No documents."
 
 #: fdp_app/templates/admin/view_pathtrack.html:55
 msgid "Torna allo storico"
@@ -556,7 +556,7 @@ msgstr "No active point. Click on the map to choose your starting point."
 
 #: fdp_app/templates/coordinates/index.html:61
 msgid "Etichetta (es. \"Casa\", \"Via Roma 5\")"
-msgstr "Etichetta (es. \"Casa\", \"Via Roma 5\")"
+msgstr "Label (e.g. \"Home\", \"5 Roma Street\")"
 
 #: fdp_app/templates/coordinates/index.html:66
 msgid "Coordinate selezionate:"

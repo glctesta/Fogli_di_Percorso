@@ -238,7 +238,7 @@ msgstr "Anuleaza"
 #: fdp_app/templates/admin/bnr_rates.html:2
 #: fdp_app/templates/admin/bnr_rates.html:5
 msgid "Tassi BNR EUR-RON"
-msgstr ""
+msgstr "Cursuri BNR EUR-RON"
 
 #: fdp_app/templates/admin/bnr_rates.html:4
 msgid "Gestione tassi BNR EUR-RON"
@@ -250,83 +250,83 @@ msgid ""
 "prima scelta. In assenza di standard, il sistema scarica live da BNR.ro o"
 " cursbnr.ro al momento del submit."
 msgstr ""
+"Gestionează cursurile de schimb EUR->RON. Cursurile STANDARD sunt "
+"folosite ca primă opțiune. În lipsa unui curs standard, sistemul preia "
+"live de la BNR.ro sau cursbnr.ro la momentul trimiterii."
 
 #: fdp_app/templates/admin/bnr_rates.html:11
 msgid "Inserisci nuovo tasso standard"
-msgstr ""
+msgstr "Adaugă curs standard nou"
 
 #: fdp_app/templates/admin/bnr_rates.html:15
 msgid "Tasso (RON per 1 EUR)"
-msgstr ""
+msgstr "Curs (RON pentru 1 EUR)"
 
 #: fdp_app/templates/admin/bnr_rates.html:20
 #: fdp_app/templates/admin/bnr_rates.html:41
 msgid "Valido da"
-msgstr ""
+msgstr "Valabil de la"
 
 #: fdp_app/templates/admin/bnr_rates.html:24
-#, fuzzy
 msgid "Valido fino a (opzionale)"
-msgstr "Data 'valabil pana la' invalida."
+msgstr "Valabil până la (opțional)"
 
 #: fdp_app/templates/admin/bnr_rates.html:29
-#, fuzzy
 msgid "Salva tasso"
-msgstr "Salveaza ciorna"
+msgstr "Salvează cursul"
 
 #: fdp_app/templates/admin/bnr_rates.html:34
 msgid "Tassi STANDARD attivi"
-msgstr ""
+msgstr "Cursuri STANDARD active"
 
 #: fdp_app/templates/admin/bnr_rates.html:40
 #: fdp_app/templates/admin/bnr_rates.html:70
-#, fuzzy
 msgid "Tasso"
-msgstr "Parola"
+msgstr "Curs"
 
 #: fdp_app/templates/admin/bnr_rates.html:42
 msgid "Valido fino a"
-msgstr ""
+msgstr "Valabil până la"
 
 #: fdp_app/templates/admin/bnr_rates.html:43
 msgid "Inserito da"
-msgstr ""
+msgstr "Adăugat de"
 
 #: fdp_app/templates/admin/bnr_rates.html:51
-#, fuzzy
 msgid "aperto"
-msgstr "Suma"
+msgstr "deschis"
 
 #: fdp_app/templates/admin/bnr_rates.html:60
 msgid ""
 "Nessun tasso STANDARD configurato. Il sistema usera' BNR.ro live ad ogni "
 "submit."
 msgstr ""
+"Niciun curs STANDARD configurat. Sistemul va folosi BNR.ro live la "
+"fiecare trimitere."
 
 #: fdp_app/templates/admin/bnr_rates.html:64
 msgid "Ultimi tassi acquisiti (live + cache)"
-msgstr ""
+msgstr "Ultimele cursuri obținute (live + cache)"
 
 #: fdp_app/templates/admin/bnr_rates.html:71
 msgid "Fonte"
-msgstr ""
+msgstr "Sursă"
 
 #: fdp_app/templates/admin/bnr_rates.html:72
 msgid "Data"
-msgstr ""
+msgstr "Data"
 
 #: fdp_app/templates/admin/bnr_rates.html:73
 msgid "Standard?"
-msgstr ""
+msgstr "Standard?"
 
 #: fdp_app/templates/admin/bnr_rates.html:90
 msgid "Nessun tasso ancora acquisito. Il primo submit attivera' il fetch live."
-msgstr ""
+msgstr "Niciun curs obținut încă. Prima trimitere va declanșa preluarea live."
 
 #: fdp_app/templates/admin/bnr_rates.html:95
-#, fuzzy
 msgid "Torna all'area admin"
-msgstr "Mergi la zona admin"
+msgstr "Înapoi la zona admin"
 
 #: fdp_app/templates/admin/history.html:2
 #: fdp_app/templates/admin/history.html:4
@@ -469,7 +469,7 @@ msgstr "Niciun coleg reprezentabil pentru SubCdc-ul tau."
 
 #: fdp_app/templates/admin/representable.html:51
 msgid "Gestisci tassi BNR EUR-RON"
-msgstr ""
+msgstr "Gestionează cursuri BNR EUR-RON"
 
 #: fdp_app/templates/admin/view_pathtrack.html:2
 #: fdp_app/templates/pathtracks/view.html:2
@@ -507,7 +507,7 @@ msgstr "Descarca"
 #: fdp_app/templates/admin/view_pathtrack.html:51
 #: fdp_app/templates/pathtracks/view.html:60
 msgid "Nessun documento."
-msgstr "Nessun documento."
+msgstr "Niciun document."
 
 #: fdp_app/templates/admin/view_pathtrack.html:55
 msgid "Torna allo storico"
