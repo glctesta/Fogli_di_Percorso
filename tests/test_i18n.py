@@ -34,13 +34,11 @@ def test_default_locale_is_ro_when_no_cookie_no_header(client):
 def test_lang_selector_partial_rendered_on_login_page(client):
     response = client.get("/login")
     assert response.status_code == 200
-    # Should contain the language dropdown
-    assert b"dropdown-toggle" in response.data
-    # All three flags present in the dropdown items
-    # (we test text since the emoji bytes are tricky)
-    assert b"Romana" in response.data
-    assert b"English" in response.data
-    assert b"Italiano" in response.data
+    # Inline RO/IT/EN buttons (replacement for the previous Bootstrap dropdown
+    # that broke when browser CSP blocked unsafe-eval — Popper.js dependency).
+    assert b'href="/lang/set/ro' in response.data
+    assert b'href="/lang/set/it' in response.data
+    assert b'href="/lang/set/en' in response.data
 
 
 def test_lang_selector_visible_when_logged_in(client):
@@ -51,7 +49,10 @@ def test_lang_selector_visible_when_logged_in(client):
         sess["function_code"] = 70
     response = client.get("/dashboard")
     assert response.status_code == 200
-    assert b"dropdown-toggle" in response.data
+    # Lang selector rendered on every page via base.html include.
+    assert b'href="/lang/set/ro' in response.data
+    assert b'href="/lang/set/it' in response.data
+    assert b'href="/lang/set/en' in response.data
 
 
 # ---- Tests that verify .mo translations are actually applied ----
