@@ -107,6 +107,44 @@ def create_app(*, settings: type[Settings] | None = None,
         )
         return resp
 
+    # Fallback GET endpoint for clients where the POST-based selector fails
+    # (Bootstrap dropdown interactions, blocking JS errors, locked-down
+    # corporate browsers, etc). No CSRF needed because the only effect is
+    # to set a cosmetic-language cookie — no data is modified.
+    @app.route("/lang/set/<code>", methods=["GET"])
+    @csrf.exempt
+    def set_language_get(code):
+        from flask import redirect, request, make_response
+        app.logger.info(
+            "LANG-SWITCH-GET hit: code=%r query-next=%r referrer=%r "
+            "current-cookie=%r remote=%s",
+            code,
+            request.args.get("next"),
+            request.referrer,
+            request.cookies.get(settings.LANGUAGE_COOKIE_NAME),
+            request.remote_addr,
+        )
+        if code not in settings.LANGUAGES:
+            app.logger.warning("LANG-SWITCH-GET rejected: invalid code=%r", code)
+            return ("Invalid language", 400)
+        next_url = request.args.get("next") or request.referrer or "/"
+        # Safety: only allow same-origin relative redirects to avoid open-redirect
+        if not next_url.startswith("/") or next_url.startswith("//"):
+            next_url = "/"
+        resp = make_response(redirect(next_url))
+        resp.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME,
+            code,
+            max_age=settings.LANGUAGE_COOKIE_MAX_AGE,
+            samesite="Lax",
+            httponly=False,
+        )
+        app.logger.info(
+            "LANG-SWITCH-GET ok: set %s=%s, redirect to %s",
+            settings.LANGUAGE_COOKIE_NAME, code, next_url,
+        )
+        return resp
+
     return app
 
 
