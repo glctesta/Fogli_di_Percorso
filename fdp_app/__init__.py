@@ -145,6 +145,45 @@ def create_app(*, settings: type[Settings] | None = None,
         )
         return resp
 
+    # Admin-only endpoint to force-reload .mo translation catalogs without
+    # restarting the Flask process. flask-babel uses gettext under the hood,
+    # which caches compiled .mo files at the (domain, dir, language) level in
+    # the gettext._translations module dict. Recompiling messages.mo on disk
+    # does NOT invalidate that cache — the cached Translations object keeps
+    # serving the old (possibly empty) msgstr values. Clearing the dict
+    # forces gettext to reload from disk on the next request.
+    #
+    # Safe for dev. In production behind multiple workers (Waitress/gunicorn)
+    # this only clears the current worker's cache — restart all workers for
+    # global effect.
+    @app.route("/admin/i18n-refresh", methods=["GET"])
+    def admin_i18n_refresh():
+        from flask import session, current_app
+        import gettext as _gettext
+        from flask_babel import refresh as _babel_refresh
+
+        # Allow admins only — function_code threshold matches admin_required
+        if not session.get("user_id"):
+            return ("Login required", 401)
+        # Reuse the same gate used elsewhere in admin routes
+        fc = session.get("function_code") or 0
+        min_admin_fc = current_app.config["_settings_cls"].MIN_FUNCTION_CODE_FOR_LOGIN
+        if fc < min_admin_fc:
+            return ("Admin required", 403)
+
+        before = len(_gettext._translations)
+        _gettext._translations.clear()
+        _babel_refresh()
+        app.logger.info(
+            "I18N-REFRESH by user_id=%s: cleared %d gettext cache entries",
+            session.get("user_id"), before,
+        )
+        return (
+            f"Translations refreshed. Cleared {before} cached catalog(s). "
+            f"Reload your pages now.",
+            200,
+        )
+
     return app
 
 
