@@ -20,10 +20,13 @@ const {
     Header, Footer, AlignmentType, PageOrientation, LevelFormat,
     TabStopType, TabStopPosition, TableOfContents, HeadingLevel,
     BorderStyle, WidthType, ShadingType, PageNumber, PageBreak,
+    ImageRun,
 } = require("docx");
 
 const OUTPUT = path.resolve(__dirname, "..", "docs", "user-guide",
     "Ghid_Utilizator_Fogli_di_Percorso_RO.docx");
+
+const CAPTURES_DIR = path.resolve(__dirname, "..", "docs", "user-guide", "capturi");
 
 // US Letter portrait — comod pentru tipărire
 const PAGE = {
@@ -61,6 +64,36 @@ function numbered(text) {
         numbering: { reference: "numbers", level: 0 },
         children: [new TextRun({ text })],
     });
+}
+
+/** Inserează o captură reală dintr-un fișier PNG, dacă există. Altfel cade pe placeholder. */
+function screenshotImage(filename, caption) {
+    const filePath = path.join(CAPTURES_DIR, filename);
+    if (!fs.existsSync(filePath)) {
+        console.warn(`  ! PNG missing: ${filename} -> using placeholder`);
+        return screenshotPlaceholder(caption, [`File aşteptat: capturi/${filename}`]);
+    }
+    // Capturile sunt 1440x900. Le scalăm la lăţimea conţinutului (9360 DXA ≈ 6.5 inch ≈ 624 px @96DPI).
+    const w = 624;
+    const h = Math.round(w * (900 / 1440)); // 390
+    return [
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new ImageRun({
+                type: "png",
+                data: fs.readFileSync(filePath),
+                transformation: { width: w, height: h },
+                altText: { title: caption, description: caption, name: filename },
+            })],
+        }),
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({
+                text: caption,
+                italics: true, size: 18, color: "555555",
+            })],
+        }),
+    ];
 }
 
 /** Placeholder pentru captură de ecran: tabel cu o singură celulă, fundal gri, text descriptiv. */
@@ -246,11 +279,7 @@ const sec2 = [
     numbered("Introdu parola în câmpul „Parolă”."),
     numbered("Apasă butonul „Intră”."),
     p(" "),
-    screenshotPlaceholder(
-        "Pagina de autentificare",
-        ["URL: http://192.168.10.72:5010/login",
-         "Două câmpuri: Utilizator + Parolă, buton Intră"]
-    ),
+    ...screenshotImage("01-login.png", "Pagina de autentificare (limba RO)"),
     p(" "),
     callout("warn", "Atenție", "După 5 încercări greșite consecutive, contul este blocat pentru 15 minute. Așteaptă acest interval sau contactează administratorul."),
     p(" "),
@@ -263,11 +292,7 @@ const sec3 = [
     heading("3. Pagina principală (Acasă)", HeadingLevel.HEADING_1),
     p("După autentificare ești dus pe pagina principală, care îți arată cele mai importante acțiuni disponibile."),
     p(" "),
-    screenshotPlaceholder(
-        "Dashboard utilizator normal",
-        ["Conține trei carduri principale: Punct de plecare, Declarații, Administrare",
-         "În partea de sus: nume utilizator, SubCdc, Function Code"]
-    ),
+    ...screenshotImage("02-dashboard.png", "Pagina principală (dashboard) cu cele 3 carduri"),
     p(" "),
     heading("3.1 Cardul „Punct de plecare”", HeadingLevel.HEADING_2),
     p("Aici definești sau actualizezi adresa de la care pleci de obicei spre sediu. Aplicația folosește acest punct ca referință pentru a calcula distanța one-way."),
@@ -292,11 +317,7 @@ const sec4 = [
     numbered("Completează eticheta (ex. „Casă”, „Strada Mihai Eminescu 5”)."),
     numbered("Apasă „Salvează punctul de plecare”."),
     p(" "),
-    screenshotPlaceholder(
-        "Hartă pentru selectarea punctului de plecare",
-        ["URL: http://192.168.10.72:5010/coordinates",
-         "Hartă OpenStreetMap, marker pe locația aleasă, form cu Etichetă + buton Salvează"]
-    ),
+    ...screenshotImage("03-punct-de-plecare.png", "Hartă pentru selectarea punctului de plecare"),
     p(" "),
     callout("info", "Modificarea punctului",
         "Poți să ai un singur punct activ. Pentru a-l schimba, mai întâi șterge-l (buton „Cancellare” pe pagina actuală), apoi alege locul nou pe hartă."),
@@ -319,12 +340,7 @@ const sec5 = [
     numbered("Verifică previzualizarea sumei rambursate."),
     numbered("Apasă „Salvează ciorna” pentru a păstra fără a trimite, sau „Salvează și trimite” pentru trimiterea definitivă."),
     p(" "),
-    screenshotPlaceholder(
-        "Formular declarație nouă",
-        ["URL: http://192.168.10.72:5010/pathtracks/new",
-         "Câmpuri: Tip rambursare, Număr călătorii A/R, Sumă chitanțe (taxi),",
-         "Upload PDF foaie traseu și PDF chitanțe, previzualizare sumă, butoane Salvează ciorna / Salvează și trimite"]
-    ),
+    ...screenshotImage("05-noua-declaratie.png", "Formular declarație nouă"),
     p(" "),
     heading("5.2 Diferența între „Ciornă” și „Trimisă”", HeadingLevel.HEADING_2),
     tableSimple(
@@ -344,11 +360,7 @@ const sec5 = [
     bullet("Pentru ciorne, butonul „Modifică ciorna” deschide formularul de editare."),
     bullet("Pentru declarații trimise, vezi sumarul și PDF-urile încărcate (descărcabile)."),
     p(" "),
-    screenshotPlaceholder(
-        "Lista declarațiilor mele",
-        ["URL: http://192.168.10.72:5010/pathtracks",
-         "Tabel cu: Lună, Stare (CIORNĂ/TRIMISĂ), Tip, Călătorii, Sumă, Nr. registru, Acțiuni"]
-    ),
+    ...screenshotImage("04-lista-declaratii.png", "Lista declarațiilor mele"),
     PB(),
 ];
 
@@ -362,11 +374,7 @@ const sec6 = [
     numbered("Pagina se reîncarcă imediat în limba aleasă."),
     numbered("Alegerea este memorată într-un cookie și se păstrează la următoarele vizite."),
     p(" "),
-    screenshotPlaceholder(
-        "Selector de limbă",
-        ["Stânga: textul „Lingua:” / „Language:” / „Limba:”",
-         "Dreapta: trei butoane RO, IT, EN — cel activ are fundal alb"]
-    ),
+    ...screenshotImage("02-dashboard.png", "Selectorul de limbă: vedeți „Limba: RO IT EN” în colțul din dreapta-sus al barei de navigare"),
     p(" "),
     callout("info", "Limba implicită",
         "Pentru utilizatorii noi care nu au ales încă o limbă, sistemul folosește română ca limbă implicită."),
@@ -388,11 +396,7 @@ const sec7 = [
     bullet("Buton „Harta”: ajungi pe pagina de hartă cu posibilitatea să modifici punctul de plecare al colegului."),
     bullet("Buton „Declarație nouă”: ajungi pe formularul de declarație, dar declarația va fi atribuită colegului (nu ție)."),
     p(" "),
-    screenshotPlaceholder(
-        "Lista colegilor reprezentabili",
-        ["URL: http://192.168.10.72:5010/admin/representable",
-         "Tabel: Angajat, FC (function code), Acțiuni (Harta + Declarație nouă)"]
-    ),
+    ...screenshotImage("06-admin-representable.png", "Lista colegilor reprezentabili"),
     p(" "),
     heading("7.2 Istoricul declarațiilor SubCdc", HeadingLevel.HEADING_2),
     p("Din zona admin, link „Istoric declarații SubCdc” → vezi toate declarațiile (ciornele și trimise) ale tuturor colegilor din SubCdc-ul tău."),
@@ -402,12 +406,7 @@ const sec7 = [
     callout("warn", "Limită de 500 de rânduri",
         "Pentru a evita încărcarea excesivă a paginii, sistemul afișează maximum 500 de rânduri. Dacă vezi un mesaj de avertizare „Rezultate trunchiate la 500 de rânduri”, restrânge filtrele (an, lună, tip) pentru a vedea datele complete. Aceeași limită se aplică și la exportul Excel."),
     p(" "),
-    screenshotPlaceholder(
-        "Pagina de istoric cu filtre și tabel",
-        ["URL: http://192.168.10.72:5010/admin/history?year=2026&month=5",
-         "Filtre: An, Lună, Tip; buton Filtrează; buton Export XLSX",
-         "Tabel: Angajat, Luna, Stare, Tip, Călătorii, Sumă, Nr. registru, Detalii"]
-    ),
+    ...screenshotImage("07b-admin-istoric-filtrat.png", "Pagina de istoric cu filtre și tabel (an + lună selectate)"),
     p(" "),
     heading("7.3 Exportul Excel", HeadingLevel.HEADING_2),
     p("Pe pagina de istoric, atunci când ai filtrat după anul și luna dorite, apare butonul „Export XLSX”."),
@@ -426,12 +425,7 @@ const sec7 = [
     numbered("Alege data „Valabil de la” și opțional data „Valabil până la”."),
     numbered("Apasă „Salvează cursul”."),
     p(" "),
-    screenshotPlaceholder(
-        "Pagina cursurilor BNR EUR-RON",
-        ["URL: http://192.168.10.72:5010/admin/bnr-rates",
-         "Form: Curs (RON/EUR), Valabil de la, Valabil până la, buton Salvează cursul",
-         "Două tabele: Cursuri STANDARD active, Ultimele cursuri obținute (live + cache)"]
-    ),
+    ...screenshotImage("08-admin-bnr.png", "Pagina cursurilor BNR EUR-RON"),
     p(" "),
     heading("7.5 Administrarea tarifelor €/km", HeadingLevel.HEADING_2),
     p("Tariful per kilometru este calculat ca prețul combustibilului împărțit la consumul mediu. Administratorul actualizează aceste două valori atunci când prețul combustibilului se schimbă semnificativ."),
@@ -443,12 +437,7 @@ const sec7 = [
     numbered("Alege „Valabil de la” și opțional „Valabil până la”."),
     numbered("Apasă „Salvează tariful”."),
     p(" "),
-    screenshotPlaceholder(
-        "Pagina tarifelor €/km",
-        ["URL: http://192.168.10.72:5010/admin/fuel-rates",
-         "Form: Consum mediu km/L, Preț mediu EUR/L, Valabil de la / până la, buton Salvează tariful",
-         "Tabel: tarife active și istorice cu coloana €/km calculată automat"]
-    ),
+    ...screenshotImage("09-admin-fuel-rates.png", "Pagina tarifelor €/km"),
     p(" "),
     callout("info", "Versionarea tarifelor",
         "Fiecare tarif nou creează o versiune nouă. Declarațiile deja trimise rămân „înghețate” pe RateId-ul folosit la momentul trimiterii — nu sunt recalculate atunci când introduci o tarifă nouă."),
