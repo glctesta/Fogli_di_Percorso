@@ -79,7 +79,18 @@ def create_app(*, settings: type[Settings] | None = None,
     @app.route("/lang/<code>", methods=["POST"])
     def set_language(code):
         from flask import redirect, request, make_response
+        app.logger.info(
+            "LANG-SWITCH hit: code=%r form-next=%r referrer=%r "
+            "has-csrf=%s current-cookie=%r remote=%s",
+            code,
+            request.form.get("next"),
+            request.referrer,
+            "csrf_token" in request.form,
+            request.cookies.get(settings.LANGUAGE_COOKIE_NAME),
+            request.remote_addr,
+        )
         if code not in settings.LANGUAGES:
+            app.logger.warning("LANG-SWITCH rejected: invalid code=%r", code)
             return ("Invalid language", 400)
         next_url = request.form.get("next") or request.referrer or "/"
         resp = make_response(redirect(next_url))
@@ -90,7 +101,88 @@ def create_app(*, settings: type[Settings] | None = None,
             samesite="Lax",
             httponly=False,
         )
+        app.logger.info(
+            "LANG-SWITCH ok: set %s=%s, redirect to %s",
+            settings.LANGUAGE_COOKIE_NAME, code, next_url,
+        )
         return resp
+
+    # Fallback GET endpoint for clients where the POST-based selector fails
+    # (Bootstrap dropdown interactions, blocking JS errors, locked-down
+    # corporate browsers, etc). No CSRF needed because the only effect is
+    # to set a cosmetic-language cookie — no data is modified.
+    @app.route("/lang/set/<code>", methods=["GET"])
+    @csrf.exempt
+    def set_language_get(code):
+        from flask import redirect, request, make_response
+        app.logger.info(
+            "LANG-SWITCH-GET hit: code=%r query-next=%r referrer=%r "
+            "current-cookie=%r remote=%s",
+            code,
+            request.args.get("next"),
+            request.referrer,
+            request.cookies.get(settings.LANGUAGE_COOKIE_NAME),
+            request.remote_addr,
+        )
+        if code not in settings.LANGUAGES:
+            app.logger.warning("LANG-SWITCH-GET rejected: invalid code=%r", code)
+            return ("Invalid language", 400)
+        next_url = request.args.get("next") or request.referrer or "/"
+        # Safety: only allow same-origin relative redirects to avoid open-redirect
+        if not next_url.startswith("/") or next_url.startswith("//"):
+            next_url = "/"
+        resp = make_response(redirect(next_url))
+        resp.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME,
+            code,
+            max_age=settings.LANGUAGE_COOKIE_MAX_AGE,
+            samesite="Lax",
+            httponly=False,
+        )
+        app.logger.info(
+            "LANG-SWITCH-GET ok: set %s=%s, redirect to %s",
+            settings.LANGUAGE_COOKIE_NAME, code, next_url,
+        )
+        return resp
+
+    # Admin-only endpoint to force-reload .mo translation catalogs without
+    # restarting the Flask process. flask-babel uses gettext under the hood,
+    # which caches compiled .mo files at the (domain, dir, language) level in
+    # the gettext._translations module dict. Recompiling messages.mo on disk
+    # does NOT invalidate that cache — the cached Translations object keeps
+    # serving the old (possibly empty) msgstr values. Clearing the dict
+    # forces gettext to reload from disk on the next request.
+    #
+    # Safe for dev. In production behind multiple workers (Waitress/gunicorn)
+    # this only clears the current worker's cache — restart all workers for
+    # global effect.
+    @app.route("/admin/i18n-refresh", methods=["GET"])
+    def admin_i18n_refresh():
+        from flask import session, current_app
+        import gettext as _gettext
+        from flask_babel import refresh as _babel_refresh
+
+        # Allow admins only — function_code threshold matches admin_required
+        if not session.get("user_id"):
+            return ("Login required", 401)
+        # Reuse the same gate used elsewhere in admin routes
+        fc = session.get("function_code") or 0
+        min_admin_fc = current_app.config["_settings_cls"].MIN_FUNCTION_CODE_FOR_LOGIN
+        if fc < min_admin_fc:
+            return ("Admin required", 403)
+
+        before = len(_gettext._translations)
+        _gettext._translations.clear()
+        _babel_refresh()
+        app.logger.info(
+            "I18N-REFRESH by user_id=%s: cleared %d gettext cache entries",
+            session.get("user_id"), before,
+        )
+        return (
+            f"Translations refreshed. Cleared {before} cached catalog(s). "
+            f"Reload your pages now.",
+            200,
+        )
 
     return app
 

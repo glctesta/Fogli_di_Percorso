@@ -1,36 +1,19 @@
 {% set current = (request.cookies.get('fdp_lang') or 'ro') %}
 {% set lang_aria = {'ro': 'Romana', 'it': 'Italiano', 'en': 'English'} %}
-<div class="dropdown me-2">
-    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
-            data-bs-toggle="dropdown" aria-expanded="false"
-            aria-label="{{ _('Cambia lingua. Lingua attuale: %(lang)s', lang=lang_aria.get(current, 'Romana')) }}">
-        <span aria-hidden="true">
-            {% if current == 'ro' %}&#127479;&#127476;
-            {% elif current == 'en' %}&#127468;&#127463;
-            {% else %}&#127470;&#127481;{% endif %}
-        </span>
-        <span class="ms-1">{{ current|upper }}</span>
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-        {% for code, flag, label in [
-            ('ro', '&#127479;&#127476;', 'Romana'),
-            ('it', '&#127470;&#127481;', 'Italiano'),
-            ('en', '&#127468;&#127463;', 'English'),
-        ] %}
-        <li>
-            <form action="{{ url_for('set_language', code=code) }}" method="post" class="m-0">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="next" value="{{ request.full_path }}">
-                <button type="submit"
-                        class="dropdown-item {% if current == code %}active{% endif %}"
-                        aria-label="{{ label }}"
-                        {% if current == code %}aria-current="true"{% endif %}>
-                    <span aria-hidden="true">{{ flag|safe }}</span>
-                    <span class="ms-1">{{ code|upper }}</span>
-                    <span class="text-muted ms-2">{{ label }}</span>
-                </button>
-            </form>
-        </li>
-        {% endfor %}
-    </ul>
+{# Plain inline RO|IT|EN buttons. No Bootstrap dropdown / no Popper.js,
+   so the selector keeps working even on browsers where extensions or
+   policies inject a CSP that blocks `unsafe-eval` (Popper would break
+   silently and swallow the click on dropdown items).
+   The /lang/set/<code> endpoint is GET-based with @csrf.exempt because
+   the only effect is setting a cosmetic-language cookie. #}
+<div class="d-flex align-items-center me-2" role="group" aria-label="{{ _('Cambia lingua. Lingua attuale: %(lang)s', lang=lang_aria.get(current, 'Romana')) }}">
+    <span class="me-1 small text-light opacity-75" aria-hidden="true">{{ _('Lingua') }}:</span>
+    {% for code in ('ro', 'it', 'en') %}
+    <a href="{{ url_for('set_language_get', code=code, next=request.full_path) }}"
+       class="btn btn-sm py-0 px-2 me-1 {% if current == code %}btn-light text-dark fw-bold{% else %}btn-outline-light{% endif %}"
+       aria-label="{{ lang_aria.get(code) }}"
+       {% if current == code %}aria-current="true"{% endif %}>
+        {{ code|upper }}
+    </a>
+    {% endfor %}
 </div>

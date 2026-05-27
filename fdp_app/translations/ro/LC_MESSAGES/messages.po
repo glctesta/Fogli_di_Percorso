@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-21 09:16+0300\n"
+"POT-Creation-Date: 2026-05-26 16:56+0300\n"
 "PO-Revision-Date: 2026-05-20 11:54+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ro\n"
@@ -19,26 +19,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: fdp_app/admin/routes.py:114
+#: fdp_app/admin/routes.py:127
 msgid "Valore tasso non valido."
 msgstr "Valoare tarif invalid."
 
-#: fdp_app/admin/routes.py:117
+#: fdp_app/admin/routes.py:130
 msgid "Tasso deve essere positivo."
 msgstr "Tariful trebuie sa fie pozitiv."
 
-#: fdp_app/admin/routes.py:124
+#: fdp_app/admin/routes.py:137 fdp_app/admin/routes.py:202
 msgid "Data 'valido da' non valida."
 msgstr "Data 'valabil de la' invalida."
 
-#: fdp_app/admin/routes.py:131
+#: fdp_app/admin/routes.py:144 fdp_app/admin/routes.py:209
 msgid "Data 'valido fino a' non valida."
 msgstr "Data 'valabil pana la' invalida."
 
-#: fdp_app/admin/routes.py:145
+#: fdp_app/admin/routes.py:158
 #, python-format
 msgid "Tasso standard inserito (rate=%(rate).4f)."
 msgstr "Tarif standard inserat (curs=%(rate).4f)."
+
+#: fdp_app/admin/routes.py:184
+msgid "Consumo (km/L) non valido."
+msgstr "Consum (km/L) invalid."
+
+#: fdp_app/admin/routes.py:187
+msgid "Consumo (km/L) deve essere positivo."
+msgstr "Consumul (km/L) trebuie sa fie pozitiv."
+
+#: fdp_app/admin/routes.py:192
+msgid "Prezzo carburante (EUR/L) non valido."
+msgstr "Pret combustibil (EUR/L) invalid."
+
+#: fdp_app/admin/routes.py:195
+msgid "Prezzo carburante (EUR/L) deve essere positivo."
+msgstr "Pretul combustibilului (EUR/L) trebuie sa fie pozitiv."
+
+#: fdp_app/admin/routes.py:212
+msgid "'Valido fino a' non puo' essere precedente a 'valido da'."
+msgstr "'Valabil pana la' nu poate fi inainte de 'valabil de la'."
+
+#: fdp_app/admin/routes.py:225
+msgid "Esiste gia' una tariffa con questo 'valido da'."
+msgstr "Exista deja o tarifare cu acest 'valabil de la'."
+
+#: fdp_app/admin/routes.py:232
+#, python-format
+msgid "Tariffa inserita (consumo=%(c).2f km/L, prezzo=%(p).3f EUR/L)."
+msgstr "Tarif inserat (consum=%(c).2f km/L, pret=%(p).3f EUR/L)."
 
 #: fdp_app/auth/routes.py:41
 msgid "Troppi tentativi falliti, riprovare piu' tardi."
@@ -179,10 +208,14 @@ msgstr "Ciorna stearsa."
 msgid "Impossibile cancellare (non e' una bozza o gia' cancellata)."
 msgstr "Imposibil de sters (nu este o ciorna sau este deja stearsa)."
 
-#: fdp_app/templates/_lang_selector.html:6
+#: fdp_app/templates/_lang_selector.html:9
 #, python-format
 msgid "Cambia lingua. Lingua attuale: %(lang)s"
 msgstr "Schimba limba. Limba curenta: %(lang)s"
+
+#: fdp_app/templates/_lang_selector.html:10
+msgid "Lingua"
+msgstr "Limba"
 
 #: fdp_app/templates/base.html:22
 msgid "Salta al contenuto"
@@ -238,7 +271,7 @@ msgstr "Anuleaza"
 #: fdp_app/templates/admin/bnr_rates.html:2
 #: fdp_app/templates/admin/bnr_rates.html:5
 msgid "Tassi BNR EUR-RON"
-msgstr ""
+msgstr "Cursuri BNR EUR-RON"
 
 #: fdp_app/templates/admin/bnr_rates.html:4
 msgid "Gestione tassi BNR EUR-RON"
@@ -250,88 +283,160 @@ msgid ""
 "prima scelta. In assenza di standard, il sistema scarica live da BNR.ro o"
 " cursbnr.ro al momento del submit."
 msgstr ""
+"Gestionează cursurile de schimb EUR->RON. Cursurile STANDARD sunt "
+"folosite ca primă opțiune. În lipsa unui curs standard, sistemul preia "
+"live de la BNR.ro sau cursbnr.ro la momentul trimiterii."
 
 #: fdp_app/templates/admin/bnr_rates.html:11
 msgid "Inserisci nuovo tasso standard"
-msgstr ""
+msgstr "Adaugă curs standard nou"
 
 #: fdp_app/templates/admin/bnr_rates.html:15
 msgid "Tasso (RON per 1 EUR)"
-msgstr ""
+msgstr "Curs (RON pentru 1 EUR)"
 
 #: fdp_app/templates/admin/bnr_rates.html:20
 #: fdp_app/templates/admin/bnr_rates.html:41
+#: fdp_app/templates/admin/fuel_rates.html:25
+#: fdp_app/templates/admin/fuel_rates.html:48
 msgid "Valido da"
-msgstr ""
+msgstr "Valabil de la"
 
 #: fdp_app/templates/admin/bnr_rates.html:24
-#, fuzzy
+#: fdp_app/templates/admin/fuel_rates.html:29
 msgid "Valido fino a (opzionale)"
-msgstr "Data 'valabil pana la' invalida."
+msgstr "Valabil până la (opțional)"
 
 #: fdp_app/templates/admin/bnr_rates.html:29
-#, fuzzy
 msgid "Salva tasso"
-msgstr "Salveaza ciorna"
+msgstr "Salvează cursul"
 
 #: fdp_app/templates/admin/bnr_rates.html:34
 msgid "Tassi STANDARD attivi"
-msgstr ""
+msgstr "Cursuri STANDARD active"
 
 #: fdp_app/templates/admin/bnr_rates.html:40
 #: fdp_app/templates/admin/bnr_rates.html:70
-#, fuzzy
 msgid "Tasso"
-msgstr "Parola"
+msgstr "Curs"
 
 #: fdp_app/templates/admin/bnr_rates.html:42
+#: fdp_app/templates/admin/fuel_rates.html:49
 msgid "Valido fino a"
-msgstr ""
+msgstr "Valabil până la"
 
 #: fdp_app/templates/admin/bnr_rates.html:43
+#: fdp_app/templates/admin/fuel_rates.html:50
 msgid "Inserito da"
-msgstr ""
+msgstr "Adăugat de"
 
 #: fdp_app/templates/admin/bnr_rates.html:51
-#, fuzzy
 msgid "aperto"
-msgstr "Suma"
+msgstr "deschis"
 
 #: fdp_app/templates/admin/bnr_rates.html:60
 msgid ""
 "Nessun tasso STANDARD configurato. Il sistema usera' BNR.ro live ad ogni "
 "submit."
 msgstr ""
+"Niciun curs STANDARD configurat. Sistemul va folosi BNR.ro live la "
+"fiecare trimitere."
 
 #: fdp_app/templates/admin/bnr_rates.html:64
 msgid "Ultimi tassi acquisiti (live + cache)"
-msgstr ""
+msgstr "Ultimele cursuri obținute (live + cache)"
 
 #: fdp_app/templates/admin/bnr_rates.html:71
 msgid "Fonte"
-msgstr ""
+msgstr "Sursă"
 
 #: fdp_app/templates/admin/bnr_rates.html:72
 msgid "Data"
-msgstr ""
+msgstr "Data"
 
 #: fdp_app/templates/admin/bnr_rates.html:73
 msgid "Standard?"
-msgstr ""
+msgstr "Standard?"
 
 #: fdp_app/templates/admin/bnr_rates.html:90
 msgid "Nessun tasso ancora acquisito. Il primo submit attivera' il fetch live."
-msgstr ""
+msgstr "Niciun curs obținut încă. Prima trimitere va declanșa preluarea live."
 
 #: fdp_app/templates/admin/bnr_rates.html:95
-#, fuzzy
+#: fdp_app/templates/admin/fuel_rates.html:74
 msgid "Torna all'area admin"
-msgstr "Mergi la zona admin"
+msgstr "Înapoi la zona admin"
+
+#: fdp_app/templates/admin/bnr_rates.html:98
+#: fdp_app/templates/admin/representable.html:53
+msgid "Gestisci tariffe €/km"
+msgstr "Gestioneaza tarifele €/km"
+
+#: fdp_app/templates/admin/fuel_rates.html:2
+#: fdp_app/templates/admin/fuel_rates.html:5
+msgid "Tariffe rimborso km"
+msgstr "Tarife rambursare km"
+
+#: fdp_app/templates/admin/fuel_rates.html:4
+msgid "Gestione tariffe rimborso km"
+msgstr "Gestionare tarife rambursare km"
+
+#: fdp_app/templates/admin/fuel_rates.html:8
+msgid ""
+"Gestisci consumo medio (km/L) e prezzo medio carburante (EUR/L). Ogni "
+"inserimento crea una nuova versione: i rimborsi gia' registrati restano "
+"congelati sul RateId usato al momento del submit."
+msgstr ""
+
+#: fdp_app/templates/admin/fuel_rates.html:11
+msgid "Inserisci nuova tariffa"
+msgstr "Adauga tarifa noua"
+
+#: fdp_app/templates/admin/fuel_rates.html:15
+msgid "Consumo medio (km/L)"
+msgstr "Consum mediu (km/L)"
+
+#: fdp_app/templates/admin/fuel_rates.html:20
+msgid "Prezzo medio carburante (EUR/L)"
+msgstr "Pret mediu combustibil (EUR/L)"
+
+#: fdp_app/templates/admin/fuel_rates.html:34
+msgid "Salva tariffa"
+msgstr "Salveaza tariful"
+
+#: fdp_app/templates/admin/fuel_rates.html:39
+msgid "Tariffe attive e storiche"
+msgstr "Tarife active si istorice"
+
+#: fdp_app/templates/admin/fuel_rates.html:45
+msgid "Consumo km/L"
+msgstr "Consum km/L"
+
+#: fdp_app/templates/admin/fuel_rates.html:46
+msgid "Prezzo EUR/L"
+msgstr "Pret EUR/L"
+
+#: fdp_app/templates/admin/fuel_rates.html:47
+msgid "€/km"
+msgstr "€/km"
+
+#: fdp_app/templates/admin/fuel_rates.html:60
+msgid "(aperto)"
+msgstr "(deschis)"
+
+#: fdp_app/templates/admin/fuel_rates.html:69
+msgid "Nessuna tariffa configurata."
+msgstr "Nicio tarifa configurata."
+
+#: fdp_app/templates/admin/fuel_rates.html:77
+#: fdp_app/templates/admin/representable.html:50
+msgid "Gestisci tassi BNR EUR-RON"
+msgstr "Gestionează cursuri BNR EUR-RON"
 
 #: fdp_app/templates/admin/history.html:2
 #: fdp_app/templates/admin/history.html:4
 #: fdp_app/templates/admin/history.html:5
-#: fdp_app/templates/admin/representable.html:48
+#: fdp_app/templates/admin/representable.html:47
 msgid "Storico dichiarazioni SubCdc"
 msgstr "Istoric declaratii SubCdc"
 
@@ -340,7 +445,7 @@ msgid "Anno"
 msgstr "An"
 
 #: fdp_app/templates/admin/history.html:14
-#: fdp_app/templates/admin/history.html:51
+#: fdp_app/templates/admin/history.html:60
 #: fdp_app/templates/pathtracks/list.html:16
 msgid "Mese"
 msgstr "Luna"
@@ -351,7 +456,7 @@ msgid "Tutti"
 msgstr "Toate"
 
 #: fdp_app/templates/admin/history.html:25
-#: fdp_app/templates/admin/history.html:53
+#: fdp_app/templates/admin/history.html:62
 #: fdp_app/templates/admin/view_pathtrack.html:24
 #: fdp_app/templates/pathtracks/list.html:18
 msgid "Tipo"
@@ -377,44 +482,51 @@ msgstr "Filtreaza"
 msgid "Export XLSX"
 msgstr "Export XLSX"
 
-#: fdp_app/templates/admin/history.html:50
-#: fdp_app/templates/admin/representable.html:16
+#: fdp_app/templates/admin/history.html:49
+#, python-format
+msgid ""
+"Risultati troncati a %(max_rows)s righe. Restringere i filtri (anno, "
+"mese, tipo) per ottenere dati completi."
+msgstr ""
+
+#: fdp_app/templates/admin/history.html:59
+#: fdp_app/templates/admin/representable.html:15
 msgid "Dipendente"
 msgstr "Angajat"
 
-#: fdp_app/templates/admin/history.html:52
+#: fdp_app/templates/admin/history.html:61
 #: fdp_app/templates/admin/view_pathtrack.html:21
 #: fdp_app/templates/pathtracks/list.html:17
 #: fdp_app/templates/pathtracks/view.html:18
 msgid "Stato"
 msgstr "Stare"
 
-#: fdp_app/templates/admin/history.html:54
+#: fdp_app/templates/admin/history.html:63
 #: fdp_app/templates/admin/view_pathtrack.html:26
 #: fdp_app/templates/pathtracks/list.html:19
 msgid "Viaggi A/R"
 msgstr "Calatorii Dus/Intors"
 
-#: fdp_app/templates/admin/history.html:55
+#: fdp_app/templates/admin/history.html:64
 #: fdp_app/templates/admin/view_pathtrack.html:31
 #: fdp_app/templates/pathtracks/list.html:20
 msgid "Importo"
 msgstr "Suma"
 
-#: fdp_app/templates/admin/history.html:56
+#: fdp_app/templates/admin/history.html:65
 #: fdp_app/templates/admin/view_pathtrack.html:22
 #: fdp_app/templates/pathtracks/list.html:21
 msgid "N. registro"
 msgstr "Nr. registru"
 
-#: fdp_app/templates/admin/history.html:67
+#: fdp_app/templates/admin/history.html:76
 #: fdp_app/templates/admin/view_pathtrack.html:8
 #: fdp_app/templates/pathtracks/list.html:31
 #: fdp_app/templates/pathtracks/view.html:8
 msgid "BOZZA"
 msgstr "CIORNA"
 
-#: fdp_app/templates/admin/history.html:69
+#: fdp_app/templates/admin/history.html:78
 #: fdp_app/templates/admin/view_pathtrack.html:10
 #: fdp_app/templates/pathtracks/list.html:33
 #: fdp_app/templates/pathtracks/view.html:10
@@ -422,16 +534,16 @@ msgstr "CIORNA"
 msgid "INVIATA"
 msgstr "TRIMISA"
 
-#: fdp_app/templates/admin/history.html:79
+#: fdp_app/templates/admin/history.html:88
 #: fdp_app/templates/pathtracks/list.html:42
 msgid "Dettagli"
 msgstr "Detalii"
 
-#: fdp_app/templates/admin/history.html:88
+#: fdp_app/templates/admin/history.html:97
 msgid "Nessuna dichiarazione trovata con i filtri selezionati."
 msgstr "Nicio declaratie gasita cu filtrele selectate."
 
-#: fdp_app/templates/admin/history.html:92
+#: fdp_app/templates/admin/history.html:101
 msgid "Torna ai rappresentati"
 msgstr "Inapoi la reprezentati"
 
@@ -444,32 +556,35 @@ msgstr "Angajati reprezentabili"
 msgid "Area amministrazione"
 msgstr "Zona administrare"
 
-#: fdp_app/templates/admin/representable.html:17
+#: fdp_app/templates/admin/representable.html:7
+msgid ""
+"Puoi inserire dichiarazioni e gestire punti di partenza per conto dei "
+"colleghi elencati qui sotto (stesso SubCdc, FunctionCode minore della "
+"tua)."
+msgstr ""
+
+#: fdp_app/templates/admin/representable.html:16
 msgid "FC"
 msgstr "FC"
 
-#: fdp_app/templates/admin/representable.html:18
+#: fdp_app/templates/admin/representable.html:17
 msgid "Azioni"
 msgstr "Actiuni"
 
-#: fdp_app/templates/admin/representable.html:29
+#: fdp_app/templates/admin/representable.html:28
 msgid "Mappa"
 msgstr "Harta"
 
-#: fdp_app/templates/admin/representable.html:33
+#: fdp_app/templates/admin/representable.html:32
 #: fdp_app/templates/pathtracks/list.html:8
 #: fdp_app/templates/pathtracks/new.html:2
 #: fdp_app/templates/pathtracks/new.html:5
 msgid "Nuova dichiarazione"
 msgstr "Declaratie noua"
 
-#: fdp_app/templates/admin/representable.html:43
+#: fdp_app/templates/admin/representable.html:42
 msgid "Nessun collega rappresentabile per il tuo SubCdc."
 msgstr "Niciun coleg reprezentabil pentru SubCdc-ul tau."
-
-#: fdp_app/templates/admin/representable.html:51
-msgid "Gestisci tassi BNR EUR-RON"
-msgstr ""
 
 #: fdp_app/templates/admin/view_pathtrack.html:2
 #: fdp_app/templates/pathtracks/view.html:2
@@ -507,7 +622,7 @@ msgstr "Descarca"
 #: fdp_app/templates/admin/view_pathtrack.html:51
 #: fdp_app/templates/pathtracks/view.html:60
 msgid "Nessun documento."
-msgstr "Nessun documento."
+msgstr "Niciun document."
 
 #: fdp_app/templates/admin/view_pathtrack.html:55
 msgid "Torna allo storico"
@@ -720,9 +835,10 @@ msgstr "Salveaza ciorna"
 #: fdp_app/templates/pathtracks/new.html:89
 #: fdp_app/templates/pathtracks/view.html:128
 msgid "Confermi l'invio definitivo? Dopo l'invio non potrai più modificare."
-msgstr ""
-"Confirmati trimiterea definitiva? Dupa trimitere nu veti mai putea "
-"modifica."
+msgstr "Confirmi trimiterea definitiva? Dupa trimitere nu vei mai putea modifica."
+"Confirmi trimiterea definitiva? Dupa trimitere nu vei mai putea "
+"modifica.Confirmati trimiterea definitiva? Dupa trimitere nu veti mai "
+"putea modifica."
 
 #: fdp_app/templates/pathtracks/new.html:90
 #: fdp_app/templates/pathtracks/new.html:95
