@@ -5,8 +5,13 @@
  * cu acoperire copertă, cuprins, secțiuni cu placeholder-uri pentru
  * capturile de ecran și subsol cu numerotare pagini.
  *
- * Rulare:
+ * SETUP (o singură dată):
+ *   npm install                  # instalează pachetul `docx` (din package.json)
+ *
+ * RULARE:
  *   node scripts/generate_user_guide_ro.js
+ *   # sau echivalent:
+ *   npm run build-guide-ro
  */
 const fs = require("fs");
 const path = require("path");

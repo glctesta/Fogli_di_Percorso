@@ -30,5 +30,9 @@ email_credentials.enc
 # Deployment build artifacts
 dist/
 
+# Node (only used by scripts/generate_user_guide_ro.js)
+node_modules/
+package-lock.json
+
 # Plans / specs ARE committed
 !docs/
