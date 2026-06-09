@@ -9,6 +9,21 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _parse_int_list(raw: str | None) -> tuple[int, ...]:
+    if not raw:
+        return ()
+    values: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            values.append(int(token))
+        except ValueError:
+            continue
+    return tuple(values)
+
+
 class Settings:
     """Settings letti da env var (con default) o file di configurazione."""
 
@@ -36,6 +51,12 @@ class Settings:
     EMPLOYER_ID: int = 2
     MIN_FUNCTION_CODE_FOR_LOGIN: int = 60  # esclusivo: serve > 60
     REGISTRY_TYPE_ID: int = 790
+    REIMBURSEMENT_REPORT_ALLOWED_USER_IDS: tuple[int, ...] = _parse_int_list(
+        os.environ.get("FDP_REIMBURSEMENT_REPORT_ALLOWED_USER_IDS")
+    )
+    REIMBURSEMENT_REPORT_ALLOWED_FUNCTION_CODES: tuple[int, ...] = _parse_int_list(
+        os.environ.get("FDP_REIMBURSEMENT_REPORT_ALLOWED_FUNCTION_CODES")
+    )
 
     # Workplace
     @classmethod

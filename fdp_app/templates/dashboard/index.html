@@ -65,4 +65,24 @@
         </div>
     </div>
 </div>
+
+{% if can_access_reimbursement_reporting %}
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card fdp-dashboard-card h-100 border-success-subtle">
+            <div class="card-body">
+                <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                <h5 class="card-title">{{ _('Raccolta informazioni aggiuntive') }}</h5>
+                <p class="card-text text-muted">
+                    {{ _('Gestisci integrazioni per utente e genera report Excel di rimborso effettivo.') }}
+                </p>
+                <a class="btn btn-outline-success"
+                   href="{{ url_for('reimbursement_reporting.index') }}">
+                    {{ _('Vai ai report rimborsi') }} <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Whitelist report rimborsi') }} - Fogli di Percorso{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">{{ _('Whitelist report rimborsi') }}</h1>
+<h2><i class="bi bi-shield-lock"></i> {{ _('Whitelist accesso report rimborsi') }}</h2>
+<p class="text-muted">
+    {{ _('Configura chi puo\' accedere alla sezione dedicata ai report rimborsi (oltre agli eventuali permessi da variabili ambiente).') }}
+</p>
+
+<form method="post" action="{{ url_for('admin.reimbursement_permissions_add') }}" class="row g-2 mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Tipo permesso') }}</label>
+        <select class="form-select" name="permission_type" required>
+            <option value="USER">USER (EmployeeHireHistoryId sessione)</option>
+            <option value="FUNCTION_CODE">FUNCTION_CODE</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">{{ _('Valore target') }}</label>
+        <input class="form-control" type="number" name="target_value" required>
+        <div class="form-text">
+            {{ _('Per USER inserire EmployeeHireHistoryId, non EmployeeId.') }}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">{{ _('Note') }}</label>
+        <input class="form-control" type="text" name="notes" maxlength="255">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-circle"></i> {{ _('Aggiungi') }}
+        </button>
+    </div>
+</form>
+
+{% if permissions %}
+<div class="table-responsive">
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>{{ _('Tipo') }}</th>
+            <th>{{ _('Valore') }}</th>
+            <th>{{ _('Note') }}</th>
+            <th>{{ _('Inserito da') }}</th>
+            <th>{{ _('Data') }}</th>
+            <th>{{ _('Azioni') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in permissions %}
+        <tr>
+            <td>{{ p.permission_id }}</td>
+            <td><span class="badge bg-secondary">{{ p.permission_type }}</span></td>
+            <td>{{ p.target_value }}</td>
+            <td>{{ p.notes }}</td>
+            <td>{{ p.user_sys }}</td>
+            <td>{{ p.date_sys.strftime('%d/%m/%Y %H:%M') if p.date_sys else '-' }}</td>
+            <td>
+                <form method="post" action="{{ url_for('admin.reimbursement_permissions_delete', permission_id=p.permission_id) }}" class="d-inline m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i> {{ _('Rimuovi') }}
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="alert alert-info">{{ _('Nessun permesso whitelist configurato.') }}</div>
+{% endif %}
+
+<a href="{{ url_for('admin.representable') }}" class="btn btn-link">
+    <i class="bi bi-arrow-left"></i> {{ _('Torna all\'area admin') }}
+</a>
+{% endblock %}

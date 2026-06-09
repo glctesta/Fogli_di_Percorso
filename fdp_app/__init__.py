@@ -9,6 +9,7 @@ from pathlib import Path
 from flask import Flask, render_template
 
 from config.settings import Settings
+from fdp_app.auth.permissions import can_access_reimbursement_reporting
 from fdp_app.db import Database
 from fdp_app.extensions import csrf, babel
 
@@ -69,6 +70,19 @@ def create_app(*, settings: type[Settings] | None = None,
         return Markup(eur_str + " " + ron_str)
 
     _warn_if_missing_secret_key(app)
+
+    @app.context_processor
+    def inject_permissions():
+        from flask import session
+        return {
+            "can_access_reimbursement_reporting": can_access_reimbursement_reporting(
+                user_id=session.get("user_id"),
+                function_code=session.get("function_code"),
+                settings_cls=settings,
+                db=app.config.get("_db"),
+            )
+        }
+
     _configure_logging(app)
     _register_error_handlers(app)
     _register_blueprints(app)
@@ -250,3 +264,6 @@ def _register_blueprints(app: Flask) -> None:
 
     from fdp_app.admin.routes import bp as admin_bp
     app.register_blueprint(admin_bp)
+
+    from fdp_app.reimbursement_reporting.routes import bp as reimbursement_reporting_bp
+    app.register_blueprint(reimbursement_reporting_bp)

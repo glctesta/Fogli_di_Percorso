@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Report rimborsi effettivi') }} - Fogli di Percorso{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">{{ _('Report rimborsi effettivi') }}</h1>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h2 class="mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Raccolta informazioni aggiuntive') }}</h2>
+        <p class="text-muted mb-0">{{ _('Calcolo rimborso effettivo casa-ufficio per dipendente.') }}</p>
+    </div>
+    <form method="get" class="d-flex gap-2">
+        <div>
+            <label class="form-label mb-0" for="year">{{ _('Anno') }}</label>
+            <input id="year" class="form-control" type="number" min="2020" max="2100" name="year" value="{{ year }}" required>
+        </div>
+        <div>
+            <label class="form-label mb-0" for="month">{{ _('Mese') }}</label>
+            <input id="month" class="form-control" type="number" min="1" max="12" name="month" value="{{ month }}" required>
+        </div>
+        <div class="d-flex align-items-end gap-2">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="1" id="non_zero_only" name="non_zero_only" {% if non_zero_only %}checked{% endif %}>
+                <label class="form-check-label" for="non_zero_only">
+                    {{ _('Solo rimborso effettivo != 0') }}
+                </label>
+            </div>
+            <button class="btn btn-outline-primary" type="submit">{{ _('Applica') }}</button>
+            <a class="btn btn-success" href="{{ url_for('reimbursement_reporting.export_all', year=year, month=month, non_zero_only=1 if non_zero_only else None) }}">
+                <i class="bi bi-download"></i> {{ _('Excel generale') }}
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>{{ _('Dipendente') }}</th>
+                <th>{{ _('Dichiarato EUR') }}</th>
+                <th>{{ _('Integrazione EUR') }}</th>
+                <th>{{ _('Detrazione EUR') }}</th>
+                <th>{{ _('Effettivo EUR') }}</th>
+                <th>{{ _('Azioni') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>{{ row.employee_hire_history_id }}</td>
+                <td>{{ row.employee_full_name }}</td>
+                <td>{{ '%.2f'|format(row.declared_amount_eur) }}</td>
+                <td>{{ '%.2f'|format(row.additional_amount_eur) }}</td>
+                <td>{{ '%.2f'|format(row.deduction_amount_eur) }}</td>
+                <td><strong>{{ '%.2f'|format(effective_reimbursement(row)) }}</strong></td>
+                <td class="d-flex gap-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('reimbursement_reporting.index', year=year, month=month, employee_id=row.employee_hire_history_id) }}">
+                        {{ _('Modifica') }}
+                    </a>
+                    <a class="btn btn-sm btn-outline-success" href="{{ url_for('reimbursement_reporting.export_employee', employee_hire_history_id=row.employee_hire_history_id, year=year, month=month, non_zero_only=1 if non_zero_only else None) }}">
+                        {{ _('Excel utente') }}
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" class="text-muted">{{ _('Nessun dipendente trovato per il periodo selezionato.') }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if selected_row %}
+<div class="card mt-4">
+    <div class="card-header">
+        <strong>{{ _('Dati aggiuntivi per %(name)s', name=selected_row.employee_full_name) }}</strong>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('reimbursement_reporting.save_adjustment') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="year" value="{{ year }}">
+            <input type="hidden" name="month" value="{{ month }}">
+            <input type="hidden" name="non_zero_only" value="{{ 1 if non_zero_only else 0 }}">
+            <input type="hidden" name="employee_id" value="{{ selected_row.employee_hire_history_id }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label" for="additional_amount_eur">{{ _('Integrazione EUR') }}</label>
+                    <input id="additional_amount_eur" class="form-control" type="number" step="0.01" min="0" name="additional_amount_eur" value="{{ '%.2f'|format(selected_row.additional_amount_eur) }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="deduction_amount_eur">{{ _('Detrazione EUR') }}</label>
+                    <input id="deduction_amount_eur" class="form-control" type="number" step="0.01" min="0" name="deduction_amount_eur" value="{{ '%.2f'|format(selected_row.deduction_amount_eur) }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="notes">{{ _('Note') }}</label>
+                    <input id="notes" class="form-control" type="text" maxlength="500" name="notes" value="{{ selected_row.notes }}">
+                </div>
+            </div>
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    {% if selected_row.last_updated_on %}
+                        {{ _('Ultimo aggiornamento: %(dt)s', dt=selected_row.last_updated_on.strftime('%d/%m/%Y %H:%M')) }}
+                    {% else %}
+                        {{ _('Nessun aggiornamento registrato.') }}
+                    {% endif %}
+                </small>
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-save"></i> {{ _('Salva informazioni') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

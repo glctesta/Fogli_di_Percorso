@@ -16,6 +16,7 @@ from fdp_app.repos.bnr_rate_repo import BnrRateRepo
 from fdp_app.repos.employee_repo import EmployeeRepo
 from fdp_app.repos.pathtrack_repo import PathTrackRepo
 from fdp_app.repos.rate_repo import RateRepo
+from fdp_app.repos.reimbursement_permission_repo import ReimbursementPermissionRepo
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -265,3 +266,61 @@ def export():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@bp.route("/reimbursement-permissions", methods=["GET"])
+@login_required
+@admin_required
+def reimbursement_permissions():
+    repo = ReimbursementPermissionRepo(current_app.config["_db"])
+    permissions = repo.list_active()
+    return render_template(
+        "admin/reimbursement_permissions.html",
+        permissions=permissions,
+    )
+
+
+@bp.route("/reimbursement-permissions", methods=["POST"])
+@login_required
+@admin_required
+def reimbursement_permissions_add():
+    permission_type = (request.form.get("permission_type") or "").strip().upper()
+    if permission_type not in {"USER", "FUNCTION_CODE"}:
+        flash(_("Tipo permesso non valido."), "danger")
+        return redirect(url_for("admin.reimbursement_permissions"))
+
+    target_value = request.form.get("target_value", type=int)
+    notes = (request.form.get("notes") or "").strip()
+    if target_value is None:
+        flash(_("Valore target non valido."), "danger")
+        return redirect(url_for("admin.reimbursement_permissions"))
+
+    repo = ReimbursementPermissionRepo(current_app.config["_db"])
+    try:
+        repo.add(
+            permission_type=permission_type,
+            target_value=target_value,
+            notes=notes,
+            user_sys=session.get("full_name") or "admin",
+        )
+    except Exception as exc:
+        if "UNIQUE" in str(exc).upper() or "UX_REIMBURSEMENTREPORTINGPERMISSIONS_ACTIVE" in str(exc).upper():
+            flash(_("Permesso gia' presente nella whitelist."), "warning")
+            return redirect(url_for("admin.reimbursement_permissions"))
+        raise
+
+    flash(_("Permesso whitelist aggiunto."), "success")
+    return redirect(url_for("admin.reimbursement_permissions"))
+
+
+@bp.route("/reimbursement-permissions/<int:permission_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def reimbursement_permissions_delete(permission_id: int):
+    repo = ReimbursementPermissionRepo(current_app.config["_db"])
+    changed = repo.soft_delete(permission_id=permission_id)
+    if changed:
+        flash(_("Permesso rimosso dalla whitelist."), "success")
+    else:
+        flash(_("Permesso non trovato o gia' rimosso."), "warning")
+    return redirect(url_for("admin.reimbursement_permissions"))
