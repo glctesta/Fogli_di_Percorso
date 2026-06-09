@@ -29,6 +29,26 @@ JOIN Employee.dbo.Functions f
 WHERE k.NomeUser = ?
 """
 
+_QUERY_EMAIL_BY_NOMEUSER = """
+SELECT TOP 1 ea.WorkEmail,
+       e.EmployeeSurname,
+       e.EmployeeName
+FROM resetservices.dbo.tbuserkey k
+JOIN Employee.dbo.Employees e
+     ON e.EmployeeId = k.idanga
+JOIN Employee.dbo.EmployeeAddress ea
+     ON ea.EmployeeId = e.EmployeeId
+    AND ea.DateOut IS NULL
+    AND ea.WorkEmail IS NOT NULL
+WHERE k.NomeUser = ?
+"""
+
+_QUERY_UPDATE_PASSWORD = """
+UPDATE resetservices.dbo.tbuserkey
+SET pass = ?
+WHERE NomeUser = ?
+"""
+
 _QUERY_REPRESENTABLE = """
 SELECT
     h.EmployeeHireHistoryId,
@@ -93,6 +113,18 @@ class EmployeeAuthRow:
     name: str
     sub_cdc_id: int
     function_code: int
+
+
+@dataclass(frozen=True)
+class UserEmail:
+    """Indirizzo email + nominativo, per l'invio del link di reset."""
+    work_email: str
+    surname: str
+    name: str
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.surname} {self.name}"
 
 
 @dataclass(frozen=True)
@@ -164,6 +196,34 @@ class EmployeeRepo(BaseRepo):
             )
             for r in rows
         ]
+
+    def find_email_by_nomeuser(self, nome_user: str) -> Optional["UserEmail"]:
+        """Ritorna (work_email, surname, name) per lo username, o None se
+        l'utente non esiste o non ha una WorkEmail attiva."""
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_EMAIL_BY_NOMEUSER, (nome_user,))
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
+        if row is None or not row[0]:
+            return None
+        return UserEmail(work_email=row[0], surname=row[1], name=row[2])
+
+    def update_password(self, nome_user: str, new_password: str) -> int:
+        """Aggiorna la password (colonna `pass`) per lo username.
+
+        Ritorna il numero di righe aggiornate (0 = utente inesistente).
+        NB: il valore viene scritto nel formato attualmente in uso dalla
+        tabella condivisa `resetservices.dbo.tbuserkey`. Vedi nota di
+        sicurezza nel service.
+        """
+        cursor = self._open_cursor()
+        try:
+            cursor.execute(_QUERY_UPDATE_PASSWORD, (new_password, nome_user))
+            return cursor.rowcount
+        finally:
+            cursor.close()
 
     def find_representable_for(
         self, *, sub_cdc_id: int, min_function_code: int = 60,

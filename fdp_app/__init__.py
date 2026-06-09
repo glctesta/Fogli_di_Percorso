@@ -242,6 +242,9 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(coordinates_bp)
 
+    from fdp_app.password_reset.routes import bp as password_reset_bp
+    app.register_blueprint(password_reset_bp)
+
     from fdp_app.pathtracks.routes import bp as pathtracks_bp
     app.register_blueprint(pathtracks_bp)
 
